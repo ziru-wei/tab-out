@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tab Out Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main class="settings-card">
+    <header>
+      <h1 data-i18n="heading">Tab Out Settings</h1>
+    </header>
+
+    <form id="captainForm">
+      <section class="option-block">
+        <div class="section-heading">
+          <h2 data-i18n="basicSettings">Basics</h2>
+        </div>
+        <div class="general-settings basic-settings">
+          <label class="field">
+            <span data-i18n="language">Language</span>
+            <select id="uiLanguage">
+              <option value="en">English</option>
+              <option value="zh">中文</option>
+            </select>
+          </label>
+          <label class="field">
+            <span data-i18n="columns">Dashboard columns</span>
+            <select id="dashboardColumns">
+              <option value="2" data-i18n="twoColumns">Two columns</option>
+              <option value="3" data-i18n="threeColumns">Three columns</option>
+            </select>
+          </label>
+          <label class="field">
+            <span data-i18n="dailyQuotes">Daily quotes</span>
+            <select id="dailyQuotesEnabled">
+              <option value="yes" data-i18n="show">Show</option>
+              <option value="no" data-i18n="hide">Hide</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="option-block">
+        <div class="section-heading">
+          <h2 data-i18n="readLaterSection">Pocket</h2>
+        </div>
+        <div class="general-settings pocket-layout-settings">
+          <label class="field">
+            <span data-i18n="readLaterQuestion">Do you need a Pocket?</span>
+            <select id="readLaterEnabled">
+              <option value="yes" data-i18n="yes">Yes</option>
+              <option value="no" data-i18n="no">No</option>
+            </select>
+          </label>
+          <label class="field" id="pocketGroupingField">
+            <span data-i18n="pocketGrouping">Pocket grouping</span>
+            <select id="pocketGroupLooseTabs">
+              <option value="grouped" data-i18n="yes">Yes</option>
+              <option value="loose" data-i18n="no">No</option>
+            </select>
+            <small class="field-help" data-i18n="pocketGroupingHelp">No shows every Pocket item as a single chip.</small>
+          </label>
+        </div>
+      </section>
+
+      <section class="option-block captain-option-block">
+        <div class="section-heading captain-section-heading">
+          <h2 data-i18n="captainSettings">Task groups</h2>
+          <button class="secondary-button add-captain-button" id="addCaptainButton" type="button" data-i18n="addCaptain">Add task group</button>
+        </div>
+        <div class="captains-grid" id="captainsList"></div>
+        <p class="captains-empty" id="captainsEmpty" data-i18n="noCaptains" hidden>No task groups. Add one if you need rule-based grouping.</p>
+      </section>
+
+      <div class="actions">
+        <span id="saveStatus" role="status" aria-live="polite"></span>
+        <button type="submit" data-i18n="save">Save settings</button>
+      </div>
+    </form>
+  </main>
+  <script src="contracts.js"></script>
+  <script src="captain-rules.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

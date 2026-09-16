@@ -5,29 +5,75 @@
    ============================================================ */
 
 :root {
-  --ink: #1a1613;
-  --paper: #f8f5f0;
-  --warm-gray: #e8e2da;
-  --muted: #9a918a;
-  --accent-amber: #c8713a;
-  --accent-sage: #5a7a62;
-  --accent-slate: #5a6b7a;
-  --accent-rose: #b35a5a;
-  --status-active: #3d7a4a;
-  --status-cooling: #b8892e;
-  --status-abandoned: #b35a5a;
-  --card-bg: #fffdf9;
-  --shadow: rgba(26, 22, 19, 0.06);
+  --ink: #202020;
+  --paper: #eeeeef;
+  --warm-gray: #dedede;
+  --muted: #707070;
+  --status-abandoned: #707070;
+  --card-bg: #f8f8f8;
+
+  /* Dashboard UI Kit tokens used by tab rows and icon controls. */
+  --ptk-font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  /* Opaque chip surfaces keep Captain frame tint from changing tab colors. */
+  --ptk-card-surface-fixed: rgb(247, 247, 248);
+  --ptk-card-surface: rgba(250, 250, 250, 0.72);
+  --ptk-card-surface-hover: rgba(255, 255, 255, 0.88);
+  --ptk-card-shadow-hover:
+    0 0 12px rgba(24, 24, 24, 0.07),
+    0 2px 5px rgba(24, 24, 24, 0.025),
+    0 3px 4px rgba(24, 24, 24, 0.055);
+  --ptk-candidate-surface-fixed: rgba(200, 174, 174, 0.16);
+  --ptk-candidate-surface-hover-fixed: rgba(194, 174, 174, 0.22);
+  --ptk-candidate-border: rgba(82, 82, 82, 0.16);
+  --ptk-card-surface-active: rgba(82, 82, 82, 0.12);
+  --ptk-card-border: rgba(82, 82, 82, 0.06);
+  --ptk-card-border-hover: rgba(82, 82, 82, 0.18);
+  --ptk-card-border-active: rgba(82, 82, 82, 0.08);
+  --ptk-card-radius: 6px;
+  --ptk-glass-border: rgba(255, 255, 255, 0.56);
+  --ptk-glass-border-hover: rgba(255, 255, 255, 0.32);
+  --ptk-glass-surface:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.31) 0%, rgba(255, 255, 255, 0.16) 38%, rgba(255, 255, 255, 0.07) 68%, rgba(184, 184, 184, 0.035) 100%),
+    rgba(242, 242, 242, 0.36);
+  --ptk-glass-surface-hover:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.18) 38%, rgba(255, 255, 255, 0.08) 68%, rgba(163, 163, 163, 0.04) 100%),
+    rgba(158, 158, 158, 0.48);
+  --ptk-glass-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -1px 1px rgba(85, 85, 85, 0.04), 0 2px 8px rgba(24, 24, 24, 0.028);
+  --ptk-glass-shadow-hover: inset 0 1px 0 rgba(255, 255, 255, 0.54), inset 0 -1px 0 rgba(85, 85, 85, 0.06), 0 3px 8px rgba(24, 24, 24, 0.045);
+  --ptk-glass-blur: blur(10px) saturate(100%);
+  --ptk-pocket-surface: rgba(173, 173, 174, 0.06);
+  --ptk-pocket-backdrop: blur(1.5px);
+  --ptk-control-size: 30px;
+  --ptk-duplicate-red: #c4554d;
+  --ptk-color-danger: var(--ptk-duplicate-red);
+  /* Action tints are composited over each chip's actual surface. */
+  --ptk-action-delete-surface: rgba(195, 142, 138, 0.12);
+  --ptk-action-archive-surface: rgba(219, 219, 219, 0.329);
+  --ptk-card-action-surface: rgba(247, 247, 248, 0.72);
+  --ptk-transition: color 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease, transform 100ms ease;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+:where(button, a[href], [tabindex], [role="button"]):is(:focus, :focus-visible) {
+  outline: none !important;
+  outline-offset: 0 !important;
+}
+
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--ptk-font-sans);
+  font-size: 14px;
+  line-height: 1.4;
   background: var(--paper);
   color: var(--ink);
   min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
+  isolation: isolate;
+}
+
+/* The dashboard uses the UI Kit's single sans-serif family throughout. */
+body,
+body * {
+  font-family: var(--ptk-font-sans) !important;
 }
 
 /* Subtle paper texture */
@@ -40,180 +86,1272 @@ body::before {
   z-index: 0;
 }
 
+/* Optional ambient weather is isolated in one non-interactive layer. Sparkle
+   renders at 30fps; opacity provides a GPU-friendly visual fade. */
+.ambient-rain-layer {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  z-index: 0;
+  overflow: hidden;
+  contain: strict;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1800ms ease;
+}
+
+.ambient-rain-layer.is-active {
+  opacity: 0.7;
+}
+
+.ambient-rain-layer.is-instant {
+  transition: none;
+}
+
+.ambient-rain-layer canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  pointer-events: none;
+}
+
+/* Dashboard-only ambience XY mixer. Every rule stays under the component
+   root so the prototype interaction cannot leak into tab or Pocket UI. */
+.ambience-mixer {
+  display: grid;
+  width: min(620px, 100%);
+  max-height: 0;
+  min-width: 0;
+  margin: 0 auto;
+  gap: 12px;
+  color: var(--ink);
+  visibility: hidden;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition:
+    max-height 420ms cubic-bezier(.2, .82, .32, 1),
+    margin 420ms cubic-bezier(.2, .82, .32, 1),
+    opacity 220ms ease-in,
+    visibility 0s linear 420ms;
+}
+
+.ambience-mixer,
+.ambience-mixer * {
+  letter-spacing: .6px;
+}
+
+.ambience-mixer .ambience-mixer__pad {
+  position: relative;
+  width: 100%;
+  min-height: 220px;
+  aspect-ratio: 1.75 / 1;
+  overflow: visible;
+}
+
+.ambience-mixer .ambience-mixer__pad::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  box-sizing: border-box;
+  border: 1px dashed rgba(82, 82, 82, .24);
+  border-radius: 8px;
+  background:
+    linear-gradient(to right, transparent calc(50% - .5px), var(--ptk-card-border) 50%, transparent calc(50% + .5px)),
+    linear-gradient(to bottom, transparent calc(50% - .5px), var(--ptk-card-border) 50%, transparent calc(50% + .5px)),
+    var(--ptk-pocket-surface);
+  box-shadow: none;
+  backdrop-filter: var(--ptk-pocket-backdrop);
+  -webkit-backdrop-filter: var(--ptk-pocket-backdrop);
+  content: '';
+  pointer-events: none;
+}
+
+body.ambience-mixer-open .ambience-mixer__pad {
+  min-height: 0;
+  height: 100%;
+  aspect-ratio: auto;
+}
+
+/* The mixer occupies the available viewport; keep the dashboard itself from
+   becoming a second scroll surface while it is open. */
+body.ambience-mixer-open {
+  overflow: hidden;
+}
+
+.ambience-mixer .ambience-mixer__axis {
+  position: absolute;
+  z-index: 1;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ambience-mixer .ambience-mixer__axis--top {
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.ambience-mixer .ambience-mixer__axis--bottom {
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.ambience-mixer .ambience-mixer__axis--left {
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+}
+
+.ambience-mixer .ambience-mixer__axis--right {
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+}
+
+.ambience-mixer .ambience-mixer__point {
+  position: absolute;
+  z-index: 5;
+  width: 48px;
+  height: 48px;
+  opacity: 0;
+  cursor: grab;
+  touch-action: none;
+  transform: translate(-50%, -50%);
+  user-select: none;
+}
+
+.ambience-mixer.is-ready .ambience-mixer__point {
+  opacity: 1;
+}
+
+.ambience-mixer .ambience-mixer__point:active {
+  cursor: grabbing;
+}
+
+.ambience-mixer .ambience-mixer__point-core {
+  position: absolute;
+  inset: 7px;
+  display: grid;
+  border: 1px solid var(--ptk-card-border-hover);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .06);
+  box-shadow: var(--ptk-glass-shadow);
+  backdrop-filter: var(--ptk-pocket-backdrop);
+  -webkit-backdrop-filter: var(--ptk-pocket-backdrop);
+  place-items: center;
+  transition: var(--ptk-transition);
+}
+
+.ambience-mixer .ambience-mixer__point:hover .ambience-mixer__point-core {
+  border-color: var(--ptk-glass-border-hover);
+  background: var(--ptk-glass-surface-hover);
+  box-shadow: var(--ptk-glass-shadow-hover);
+  transform: scale(1.06);
+}
+
+.ambience-mixer .ambience-mixer__point-label {
+  position: absolute;
+  top: 50%;
+  right: 43px;
+  left: auto;
+  padding: 2px 6px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.25;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.ambience-mixer .ambience-mixer__values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-items: center;
+  gap: 3px;
+}
+
+.ambience-mixer .ambience-mixer__value {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: center;
+  gap: .45em;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: rgba(38, 38, 38, 0.5);
+  font-family: var(--ptk-font-sans);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: .35px;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  text-align: center;
+}
+
+.ambience-mixer .ambience-mixer__value strong,
+.ambience-mixer .ambience-mixer__value span {
+  display: inline;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+.ambience-mixer .ambience-mixer__value strong {
+  font-weight: 400;
+}
+
+.ambience-mixer .ambience-mixer__value span {
+  line-height: inherit;
+}
+
+@media (max-width: 560px) {
+  .ambience-mixer .ambience-mixer__pad {
+    aspect-ratio: 1.15 / 1;
+  }
+
+  .ambience-mixer .ambience-mixer__values {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .container {
   position: relative;
   z-index: 1;
   max-width: 960px;
   margin: 0 auto;
-  padding: 48px 32px 80px;
+  padding: 30px var(--dashboard-side-padding, 32px) 80px;
 }
 
-/* When the saved-for-later sidebar is open, expand the container
-   so the tab grid still has room for 2-3 columns */
-.container:has(.dashboard-columns) {
-  max-width: 1300px;
+/* The Pocket remains a viewport overlay. JavaScript measures the clear
+   viewport beside it and gives the dashboard and header one shared axis. */
+body.dashboard-adaptive-layout .container,
+body.dashboard-adaptive-layout .dashboard-top {
+  width: var(--dashboard-area-width);
+  max-width: none;
+  margin-right: 0;
+  margin-left: var(--dashboard-area-left);
 }
 
-/* ---- Header ---- */
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 48px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--warm-gray);
-}
-
-.header-left h1 {
-  font-family: 'Newsreader', serif;
-  font-weight: 300;
-  font-size: 28px;
-  letter-spacing: -0.5px;
-  color: var(--ink);
-  margin-bottom: 4px;
-}
-
-.header-left .date {
-  font-size: 13px;
-  color: var(--muted);
-  font-weight: 400;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-/* ---- Tab cleanup banner ---- */
-.tab-cleanup-banner {
-  background: linear-gradient(135deg, rgba(200, 113, 58, 0.04), rgba(200, 113, 58, 0.09));
-  border: 1px solid rgba(200, 113, 58, 0.18);
-  border-radius: 8px;
-  padding: 16px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.tab-cleanup-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.tab-cleanup-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(200, 113, 58, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.tab-cleanup-icon svg {
-  width: 18px;
-  height: 18px;
-  color: var(--accent-amber);
-}
-
-.tab-cleanup-text {
-  font-size: 13px;
-  color: var(--ink);
-  line-height: 1.5;
-}
-
-.tab-cleanup-text strong {
-  font-weight: 600;
-}
-
-.tab-cleanup-btn {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 8px 20px;
-  border-radius: 6px;
-  border: none;
-  background: var(--accent-amber);
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.tab-cleanup-btn:hover {
-  opacity: 0.85;
-  transform: translateY(-1px);
-}
-
-/* ---- Nudge banner ---- */
-.nudge-banner {
-  background: linear-gradient(135deg, rgba(179, 90, 90, 0.04), rgba(179, 90, 90, 0.08));
-  border: 1px solid rgba(179, 90, 90, 0.15);
-  border-radius: 8px;
-  padding: 16px 24px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 40px;
-}
-
-.nudge-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(179, 90, 90, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.nudge-icon svg {
-  width: 18px;
-  height: 18px;
-  color: var(--status-abandoned);
-}
-
-.nudge-text {
-  font-size: 13px;
-  color: var(--ink);
-  line-height: 1.5;
-}
-
-.nudge-text strong {
-  font-weight: 600;
-}
-
-/* ---- Section Headers ---- */
-.section-header {
-  display: flex;
-  align-items: center;
+/* The real-time metal coin lives above the shortcut guide in normal page
+   flow, so it never becomes a large fixed overlay above dashboard content. */
+.dashboard-top {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
   gap: 12px;
-  margin-bottom: 20px;
-  margin-top: 8px;
+  padding: 14px 24px 0;
 }
 
-.section-header h2 {
-  font-family: 'Newsreader', serif;
-  font-weight: 400;
-  font-size: 18px;
+.daily-quote {
+  display: flex;
+  width: 440px;
+  max-width: calc(100vw - 48px);
+  margin: 20px 0 8px;
+  align-items: baseline;
+  justify-content: center;
+  column-gap: 0.65em;
+  color: rgba(38, 38, 38, 0.5);
+  font-family: var(--ptk-font-sans);
+  font-size: 10px;
+  line-height: 1.4;
+  letter-spacing: 0.35px;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.daily-quote__lead {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.daily-quote__source {
   font-style: italic;
-  color: var(--muted);
+}
+
+.daily-quote__attribution {
   white-space: nowrap;
 }
 
-.section-line {
-  flex: 1;
-  height: 1px;
-  background: var(--warm-gray);
+.daily-quote.is-stacked {
+  flex-direction: column;
+  align-items: stretch;
+  row-gap: 2px;
+  text-align: left;
 }
 
-.section-count {
+.daily-quote.is-stacked .daily-quote__lead {
+  white-space: normal;
+}
+
+.daily-quote.is-stacked .daily-quote__attribution {
+  align-self: flex-end;
+  text-align: right;
+}
+
+.tabout-coin {
+  --coin-size: min(165.5px, 44vw);
+  --coin-depth: 4.5px;
+  --flip-y: 0deg;
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  --coin-shift-x: 0px;
+  --coin-lift: 0px;
+  width: var(--coin-size);
+  aspect-ratio: 1;
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0;
+  outline: none;
+  perspective: 900px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 180ms ease;
+}
+
+.tabout-coin:hover {
+  cursor: crosshair;
+}
+
+.tabout-coin.is-ready { opacity: 1; }
+.tabout-coin:not(.is-ready) { pointer-events: none; }
+
+.tabout-coin:focus-visible {
+  outline: none;
+}
+
+.tabout-coin__shadow,
+.tabout-coin__contact-shadow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+.tabout-coin__shadow {
+  inset: 3%;
+  background: rgba(10, 12, 16, 0.43);
+  filter: blur(11px);
+  opacity: var(--coin-shadow-opacity, 0.54);
+  transform:
+    translate3d(var(--coin-shadow-x, 0px), var(--coin-shadow-y, 13px), 0)
+    scaleX(var(--coin-shadow-scale-x, 0.985))
+    scaleY(var(--coin-shadow-scale-y, 0.965));
+  transition: transform 150ms ease, opacity 150ms ease, scale 120ms ease;
+}
+
+.tabout-coin__contact-shadow {
+  inset: 2.5%;
+  background: rgba(5, 7, 10, 0.27);
+  filter: blur(3px);
+  opacity: 0.48;
+  transform:
+    translate3d(var(--coin-contact-x, 0px), var(--coin-contact-y, 5px), 0)
+    scale(0.985);
+  transition: transform 150ms ease, opacity 150ms ease;
+}
+
+.tabout-coin__inner {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform:
+    translate3d(var(--coin-shift-x), var(--coin-lift), 0)
+    rotateX(var(--tilt-x))
+    rotateY(calc(var(--flip-y) + var(--tilt-y)));
+  transform-style: preserve-3d;
+  transition: transform 170ms cubic-bezier(.2, .75, .2, 1), translate 120ms ease, scale 120ms ease;
+  will-change: transform;
+}
+
+.tabout-coin.is-flipped { --flip-y: 180deg; }
+
+.tabout-coin.is-flipping .tabout-coin__inner {
+  transition-duration: 720ms;
+  transition-timing-function: cubic-bezier(.20, .72, .18, 1);
+}
+
+/* Immediate tactile acknowledgement while click/hold intent is being
+   resolved. Longhand transforms preserve the coin's live tilt. */
+.tabout-coin.is-pressing:not(.is-flipping):not(.is-bouncing) .tabout-coin__inner {
+  animation: tabout-coin-press 150ms cubic-bezier(.2, .72, .2, 1);
+}
+
+.tabout-coin.is-pressing:not(.is-flipping):not(.is-bouncing) .tabout-coin__contact-shadow {
+  animation: tabout-coin-press-contact 150ms cubic-bezier(.2, .72, .2, 1);
+}
+
+@keyframes tabout-coin-press {
+  0%, 100% { translate: 0 0; scale: 1; }
+  38% { translate: 0 2px; scale: .985; }
+}
+
+@keyframes tabout-coin-press-contact {
+  0%, 100% { scale: 1; opacity: .48; }
+  38% { scale: 1.018; opacity: .58; }
+}
+
+.tabout-coin.is-ambient-holding:not(.is-flipping):not(.is-bouncing) .tabout-coin__inner {
+  translate: 0 2px;
+  scale: .985;
+  transition-duration: 120ms;
+}
+
+.tabout-coin.is-ambient-holding:not(.is-flipping):not(.is-bouncing) .tabout-coin__contact-shadow {
+  scale: 1.018;
+  opacity: .58;
+  transition-duration: 120ms;
+}
+
+.tabout-coin__face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.tabout-coin__face--front {
+  transform: rotateY(0deg) translateZ(calc(var(--coin-depth) / 2));
+}
+
+.tabout-coin__face--back {
+  transform: rotateY(180deg) translateZ(calc(var(--coin-depth) / 2));
+}
+
+.tabout-coin__clip {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #767d87;
+  clip-path: circle(50% at 50% 50%);
+  isolation: isolate;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.58),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.30),
+    inset -1px -1px 2px rgba(0, 0, 0, 0.28);
+}
+
+.tabout-coin__clip::after {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: 50%;
+  background: linear-gradient(118deg,
+    transparent 12%, rgba(255, 255, 255, 0.025) 32%,
+    rgba(255, 255, 255, 0.09) 48%, rgba(255, 255, 255, 0.018) 62%,
+    transparent 83%);
+  content: '';
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.tabout-coin canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.tabout-coin__edge {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #747c87;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.30),
+    inset 0 0 4px rgba(0, 0, 0, 0.36);
+}
+
+.tabout-coin__edge:nth-child(even) { background: #c3c9d1; }
+.tabout-coin__edge:nth-child(1) { transform: translateZ(1.5px); }
+.tabout-coin__edge:nth-child(2) { transform: translateZ(1px); }
+.tabout-coin__edge:nth-child(3) { transform: translateZ(0.5px); }
+.tabout-coin__edge:nth-child(4) { transform: translateZ(0); }
+.tabout-coin__edge:nth-child(5) { transform: translateZ(-0.5px); }
+.tabout-coin__edge:nth-child(6) { transform: translateZ(-1px); }
+.tabout-coin__edge:nth-child(7) { transform: translateZ(-1.5px); }
+
+.tabout-coin.is-flipping .tabout-coin__shadow {
+  animation: tabout-coin-flip-shadow 720ms cubic-bezier(.20, .72, .18, 1);
+}
+
+.tabout-coin.is-flipping .tabout-coin__contact-shadow {
+  animation: tabout-coin-flip-contact 720ms cubic-bezier(.20, .72, .18, 1);
+}
+
+.tabout-coin.is-bouncing .tabout-coin__inner {
+  animation: tabout-coin-bounce 390ms cubic-bezier(.22, .68, .28, 1);
+}
+
+.tabout-coin.is-bouncing .tabout-coin__shadow {
+  animation: tabout-coin-bounce-shadow 390ms cubic-bezier(.22, .68, .28, 1);
+}
+
+.tabout-coin.is-bouncing .tabout-coin__contact-shadow {
+  animation: tabout-coin-bounce-contact 390ms cubic-bezier(.22, .68, .28, 1);
+}
+
+@keyframes tabout-coin-flip-shadow {
+  0%, 100% { scale: 1 1; opacity: var(--coin-shadow-opacity, 0.54); }
+  42%, 58% { scale: .34 .92; opacity: .30; }
+  50% { scale: .12 .88; opacity: .20; }
+}
+
+@keyframes tabout-coin-flip-contact {
+  0%, 100% { scale: 1 1; opacity: .48; }
+  42%, 58% { scale: .28 .96; opacity: .28; }
+  50% { scale: .08 .94; opacity: .18; }
+}
+
+@keyframes tabout-coin-bounce {
+  0%, 100% { translate: 0 0; scale: 1 1; }
+  16% { translate: 0 1px; scale: .996 1.004; }
+  48% { translate: 0 -8px; scale: 1.003 .997; }
+  78% { translate: 0 0; scale: .997 1.003; }
+  90% { translate: 0 .5px; scale: 1 1; }
+}
+
+@keyframes tabout-coin-bounce-shadow {
+  0%, 100% { scale: 1 1; opacity: var(--coin-shadow-opacity, 0.54); }
+  48% { scale: .88 .90; opacity: .38; }
+  78% { scale: 1.012 1.008; opacity: .57; }
+  90% { scale: .995 .997; opacity: .52; }
+}
+
+@keyframes tabout-coin-bounce-contact {
+  0%, 100% { scale: 1 1; opacity: .48; }
+  48% { scale: .82 .85; opacity: .27; }
+  78% { scale: 1.018 1.012; opacity: .55; }
+  90% { scale: .995 .997; opacity: .46; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tabout-coin__inner,
+  .tabout-coin__shadow,
+  .tabout-coin__contact-shadow {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+  }
+}
+
+/* Uses the UI Kit's bottom empty-state prompt typography as a centered,
+   horizontal shortcut guide below the coin. */
+.keyboard-prompts {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 18px;
+  margin: 6px 0 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  text-align: center;
+  letter-spacing: 0.2px;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.keyboard-prompts p {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin: 0;
+  color: rgba(38, 38, 38, 0.5);
+  font-size: 10px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.keyboard-prompts p[hidden] {
+  display: none;
+}
+
+.selection-shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.selection-shortcut + .selection-shortcut {
+  margin-left: 6px;
+}
+
+.prompt-stage-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.prompt-stage-item + .prompt-stage-item {
+  margin-left: 6px;
+}
+
+.selection-shortcut + .selection-shortcut::before,
+.prompt-stage-item + .prompt-stage-item::before {
+  margin-right: 3px;
+  content: '｜';
+  font-weight: 400;
+  opacity: 0.52;
+}
+
+.keyboard-prompts kbd {
+  display: inline-grid;
+  min-width: 1.4em;
+  height: 1.4em;
+  padding: 0 0.25em;
+  place-items: center;
+  border: 1px solid rgba(82, 82, 82, 0.16);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.34);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+  color: inherit;
+  font: inherit;
+  line-height: 1;
+}
+
+.keyboard-prompts .prompt-key-word {
+  font-size: 0.82em;
+  letter-spacing: 0.2px;
+}
+
+.prompt-key-separator {
+  margin: 0 -1px;
+  opacity: 0.7;
+}
+
+.keyboard-prompts .prompt-strong {
+  font-weight: 750;
+  cursor: help;
+  pointer-events: auto;
+}
+
+@keyframes candidatePromptTextShimmer {
+  0% {
+    background-position: 100% center, center;
+  }
+
+  100% {
+    background-position: 0% center, center;
+  }
+}
+
+/* A new double-Escape candidate round gets one horizontal sweep. The prompt then
+   returns to the same quiet typography as the other keyboard shortcuts. */
+.candidate-keyboard-prompt.is-new-round {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+}
+
+.candidate-keyboard-prompt.is-new-round > .prompt-label:last-child {
+  --candidate-prompt-spread: 24px;
+  --candidate-prompt-base-color: color-mix(in oklab, currentColor 48%, transparent);
+  --candidate-prompt-gradient-color: currentColor;
+  color: #262626;
+  background:
+    linear-gradient(
+      90deg,
+      transparent calc(50% - var(--candidate-prompt-spread)),
+      var(--candidate-prompt-gradient-color),
+      transparent calc(50% + var(--candidate-prompt-spread))
+    ),
+    linear-gradient(var(--candidate-prompt-base-color), var(--candidate-prompt-base-color));
+  background-repeat: no-repeat, padding-box;
+  background-size: 250% 100%, auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: candidatePromptTextShimmer 0.6s linear 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .candidate-keyboard-prompt.is-new-round > .prompt-label:last-child {
+    color: rgba(38, 38, 38, 0.5);
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    animation: none;
+  }
+}
+
+/* Long-press confirmation stays close to its initiating action. The ring is
+   driven by JavaScript so it reaches a full circle exactly at three seconds. */
+.long-press-prompt {
+  position: fixed;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 5px;
+  border-radius: 999px;
+  background: rgba(238, 238, 239, 0.76);
+  box-shadow: 0 2px 10px rgba(24, 24, 24, 0.08);
+  color: rgba(82, 82, 82, 0.58);
+  font-family: var(--ptk-font-sans);
+  font-size: 10px;
+  line-height: 1;
+  pointer-events: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.long-press-prompt__timer {
+  --long-press-progress: 0deg;
+  position: relative;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border-radius: 50%;
+  background: conic-gradient(
+    rgba(82, 82, 82, 0.7) 0deg var(--long-press-progress),
+    rgba(82, 82, 82, 0.16) var(--long-press-progress) 360deg
+  );
+  transform: rotate(-90deg);
+}
+
+.long-press-prompt__timer::after {
+  position: absolute;
+  inset: 2px;
+  border-radius: inherit;
+  background: rgba(238, 238, 239, 0.86);
+  content: '';
+}
+
+.long-press-prompt__text {
+  white-space: nowrap;
+}
+
+/* A disabled or empty Pocket has no interactive surface. Coin visibility is
+   animated separately so a populated rail can slide through the page edge. */
+body.read-later-disabled .archive-section,
+body.pocket-empty .archive-section {
+  display: none !important;
+}
+
+body.pocket-coin-hidden .archive-section {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+body.pocket-empty.is-dashboard-dragging:not(.read-later-disabled):not(.pocket-coin-hidden) .archive-section {
+  display: block !important;
+}
+
+body.pocket-empty .active-section {
+  min-height: 0;
+}
+
+/* Position and Pocket visibility come from chrome.storage. Keep the rail out
+   of the first paint until those settings and initial content are hydrated. */
+body.pocket-layout-pending .archive-section {
+  visibility: hidden;
+  transition: none;
+}
+
+body:is(.pocket-coin-hidden, .read-later-disabled) .active-section {
+  min-height: 0;
+}
+
+/* ---- Archive ---- */
+.archive-section {
+  --archive-body-radius: 8px;
+  --archive-frame-border: 1px dashed rgba(82, 82, 82, 0.24);
+  /* 0.06 alpha over #eeeeef preserves the former archive result of roughly
+     rgb(234.1 234.1 235.1), while matching the domain surface transparency. */
+  --archive-surface: var(--ptk-pocket-surface);
+  --archive-current-surface: var(--archive-surface);
+  position: fixed;
+  top: calc(18px + var(--ptk-control-size) + 12px);
+  bottom: 18px;
+  z-index: 3;
+  width: var(--pocket-side-width);
+  margin: 0;
+  padding: 0;
+  border: var(--archive-frame-border);
+  background: var(--archive-current-surface);
+  backdrop-filter: var(--ptk-pocket-backdrop);
+  -webkit-backdrop-filter: var(--ptk-pocket-backdrop);
+  visibility: visible;
+  opacity: 1;
+  overflow: visible;
+  transform: translateX(0);
+  transition:
+    transform 180ms cubic-bezier(.2, .82, .32, 1),
+    opacity 120ms ease-out,
+    visibility 0s linear 0s;
+  will-change: transform, opacity;
+}
+
+body {
+  --pocket-side-width: clamp(180px, calc(21vw - 32px), 254px);
+  --pocket-side-gap: 12px;
+}
+
+body.pocket-position-left .archive-section {
+  right: auto;
+  left: 0;
+  border-left: 0;
+  border-radius: 0 var(--archive-body-radius) var(--archive-body-radius) 0;
+}
+
+body.pocket-position-right .archive-section {
+  right: 0;
+  left: auto;
+  border-right: 0;
+  border-radius: var(--archive-body-radius) 0 0 var(--archive-body-radius);
+}
+
+body.pocket-position-left.pocket-coin-hidden .archive-section {
+  transform: translateX(-102%);
+}
+
+body.pocket-position-right.pocket-coin-hidden .archive-section {
+  transform: translateX(102%);
+}
+
+body.pocket-coin-hidden .archive-section {
+  transition:
+    transform 160ms cubic-bezier(.4, 0, 1, 1),
+    opacity 100ms ease-in,
+    visibility 0s linear 160ms;
+}
+
+.archive-dropzone {
+  position: relative;
+  width: 100%;
+  min-height: 100%;
+  height: 100%;
+  padding: 14px 12px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.archive-controls {
+  position: absolute;
+  top: calc(0px - var(--ptk-control-size) - 10px);
+  right: auto;
+  left: 50%;
+  z-index: 4;
+  display: flex;
+  width: auto;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: opacity 120ms ease, visibility 0s linear 120ms;
+}
+
+body.pocket-controls-visible .archive-controls,
+.archive-controls:focus-within {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+
+.archive-tabs {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+/* Pocket is always a viewport-edge rail. */
+  body:is(.pocket-position-left, .pocket-position-right) .container {
+    /* Keep the external toolbar above the dashboard header so its hover and
+       click targets cannot be intercepted by the header stacking context. */
+    z-index: 3;
+  }
+
+  body:is(.pocket-position-left, .pocket-position-right) .archive-controls [data-pocket-tooltip] {
+    position: relative;
+  }
+
+  body:is(.pocket-position-left, .pocket-position-right) .archive-controls [data-pocket-tooltip]::after {
+    position: absolute;
+    top: calc(100% + 7px);
+    left: 50%;
+    z-index: 10;
+    width: max-content;
+    max-width: calc(var(--pocket-side-width) - 20px);
+    padding: 4px 7px;
+    border: 1px solid rgba(82, 82, 82, 0.12);
+    border-radius: 5px;
+    background: rgba(44, 44, 44, 0.9);
+    color: #fff;
+    content: attr(data-pocket-tooltip);
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.25;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -2px);
+    transition: none;
+  }
+
+  body:is(.pocket-position-left, .pocket-position-right) .archive-controls [data-pocket-tooltip]:hover::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+/* Archive keeps its dense card treatment in one stable visual column. */
+.archive-tabs .mission-card {
+  margin-bottom: 0;
+  padding: 10px 11px;
+  gap: 8px;
+}
+
+/* Group identity is already carried by its title and tabs in Pocket. Avoid
+   nesting framed domain cards inside the Pocket frame, and give Captain and
+   non-Captain groups the same visual treatment and available width. */
+.archive-tabs .domain-card-shell > .domain-card {
+  padding-right: 0;
+  padding-left: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  overflow: visible;
+}
+
+.archive-tabs .page-chip {
+  --tab-card-height: 28px;
+  --duplicate-dismiss-width: 28px;
+  min-height: var(--tab-card-height);
+  height: var(--tab-card-height);
+  padding: 0 0 0 7px;
+  gap: 8px;
+}
+
+/* A saved Pocket item whose tab belonged to an earlier browser session. */
+.archive-tabs .page-chip.is-dormant-pocket {
+  opacity: 0.38;
+  filter: saturate(0.35);
+}
+
+.archive-tabs .page-chip.is-dormant-pocket:hover {
+  opacity: 0.62;
+}
+
+.page-chip.is-dead-captain-keep {
+  opacity: 0.38;
+  filter: saturate(0.35);
+}
+
+.page-chip.is-dead-captain-keep:hover {
+  opacity: 0.62;
+}
+
+.archive-tabs .chip-favicon {
+  width: 14px;
+  height: 14px;
+}
+
+.archive-empty {
+  padding: 24px 12px;
+  color: rgba(82, 82, 82, 0.5);
   font-size: 12px;
-  color: var(--muted);
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
+  font-style: normal;
+  text-align: center;
+}
+
+[draggable="true"].is-dragging,
+.page-chip-wrapper.is-dragging,
+.domain-card-shell.is-dragging,
+.mission-card.is-dragging,
+.page-chip.is-dragging {
+  opacity: 0;
+}
+
+.tab-drag-handle {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tab-drag-handle:active {
+  cursor: grabbing;
+}
+
+body .page-chip[draggable="true"],
+body .mission-top[draggable="true"] {
+  cursor: grab;
+}
+
+body .page-chip[draggable="true"]:active,
+body .mission-top[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.captain-group-card.is-captain-drop-target .page-chip[data-tab-id] {
+  will-change: transform;
+}
+
+.archive-tabs :is(.domain-card, .page-chip).is-pocket-reorder-before::after,
+.archive-tabs :is(.domain-card, .page-chip).is-pocket-reorder-after::after {
+  position: absolute;
+  right: 2px;
+  left: 2px;
+  z-index: 8;
+  height: 1px;
+  border-radius: 999px;
+  background: rgba(82, 82, 82, 0.34);
+  content: '';
+  pointer-events: none;
+}
+
+.archive-tabs :is(.domain-card, .page-chip).is-pocket-reorder-before::after {
+  top: 0;
+}
+
+.archive-tabs :is(.domain-card, .page-chip).is-pocket-reorder-after::after {
+  bottom: 0;
+}
+
+/* UI Kit-style animated drag preview. The original remains in-flow but fully
+   transparent; hiding it with visibility would interrupt Chrome's native DnD. */
+.tabout-drag-preview-context {
+  position: fixed !important;
+  inset: 0;
+  z-index: 1001;
+  margin: 0 !important;
+  pointer-events: none;
+}
+
+.tabout-drag-preview {
+  /* Must beat the later .page-chip/.mission-card position declarations;
+     otherwise this body-level clone becomes relatively positioned below the
+     dashboard and its pointer coordinates are added to that document offset. */
+  position: fixed !important;
+  z-index: 1002;
+  margin: 0 !important;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+  animation: tabout-card-drag-jiggle 159ms ease-in-out infinite alternate;
+  will-change: top, left, transform;
+}
+
+.tabout-drag-count {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 3;
+  display: grid;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.66);
+  border-radius: 999px;
+  background: rgba(82, 82, 82, 0.72);
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 9px;
+  font-weight: 550;
+  line-height: 1;
+}
+
+.tabout-multi-drag-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px;
+  overflow: visible;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 7px;
+  background: rgba(242, 242, 243, 0.42);
+  box-shadow: 0 10px 24px rgba(24, 24, 24, 0.09);
+  backdrop-filter: blur(12px) saturate(104%);
+  -webkit-backdrop-filter: blur(12px) saturate(104%);
+  animation: tabout-multi-drag-jiggle 138ms ease-in-out infinite alternate;
+}
+
+.tabout-drag-preview.is-snapping-back {
+  animation: none !important;
+  will-change: top, left, transform;
+}
+
+.tabout-multi-drag-preview > .page-chip {
+  width: 100%;
+  flex: 0 0 var(--tab-card-height);
+  pointer-events: none;
+}
+
+.tabout-multi-drag-preview * {
+  pointer-events: none !important;
+}
+
+body .tabout-drag-preview:is(.mission-card, .page-chip),
+body .tabout-drag-preview.domain-card-shell > .domain-card {
+  opacity: var(--drag-preview-opacity, 1);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.09) 34%, rgba(255, 255, 255, 0.025) 64%, rgba(82, 82, 82, 0.015) 100%),
+    rgba(248, 248, 248, 0.18);
+  box-shadow: 0 8px 18px rgba(24, 24, 24, 0.08);
+  backdrop-filter: blur(14px) saturate(105%) brightness(1.02);
+  -webkit-backdrop-filter: blur(14px) saturate(105%) brightness(1.02);
+}
+
+/* Dead and live tab previews share one glass surface. Dead entries retain
+   only their subdued status treatment while moving. */
+body .tabout-drag-preview.page-chip.is-dead-captain-keep {
+  --drag-preview-opacity: 0.5;
+  filter: none;
+}
+
+/* A dragged Open-area Captain keeps its identity instead of inheriting the
+   neutral group-preview fill. The hue/saturation follows its configured
+   theme at a very high lightness; preview alpha and glass blur stay exactly
+   the same as the ordinary group drag preview above. */
+body .tabout-drag-preview.captain-group-card[data-area="open"],
+body .tabout-drag-preview.domain-card-shell
+  > .captain-group-card[data-area="open"] {
+  --captain-drag-surface: hsl(var(--captain-theme-h, 220) var(--captain-theme-s, 4%) 94% / 0.18);
+  /* Do not stack the neutral white preview gradient over the theme tint: that
+     was washing its saturation out even though the underlying variable was
+     correct. Opacity and backdrop-filter remain inherited from the common
+     drag-preview rule. */
+  background: var(--captain-drag-surface, rgba(248, 248, 248, 0.18));
+}
+
+/* A mounted, transparent native drag image suppresses Chrome's default
+   favicon/tab ghost without affecting the animated preview. */
+.tabout-native-drag-image {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes tabout-card-drag-jiggle {
+  from { transform: translate(-0.2px, 0.06px) rotate(-0.2deg); }
+  to { transform: translate(0.2px, -0.06px) rotate(0.2deg); }
+}
+
+@keyframes tabout-multi-drag-jiggle {
+  from { transform: translate(-0.55px, 0.2px) rotate(-0.32deg); }
+  to { transform: translate(0.55px, -0.2px) rotate(0.32deg); }
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+  flex-shrink: 0;
+  background-color: currentColor;
+  -webkit-mask: center / contain no-repeat;
+  mask: center / contain no-repeat;
+}
+
+.icon-close {
+  -webkit-mask-image: url('assets/icons/close.svg');
+  mask-image: url('assets/icons/close.svg');
+}
+
+.icon-kill {
+  -webkit-mask-image: url('assets/icons/kill.svg');
+  mask-image: url('assets/icons/kill.svg');
+}
+
+.icon-minus {
+  -webkit-mask-image: url('assets/icons/minus.svg');
+  mask-image: url('assets/icons/minus.svg');
+}
+
+.icon-restore {
+  -webkit-mask-image: url('assets/icons/restore.svg');
+  mask-image: url('assets/icons/restore.svg');
+}
+
+.icon-layout-freeform {
+  -webkit-mask-image: url('assets/icons/layout-freeform.svg');
+  mask-image: url('assets/icons/layout-freeform.svg');
+}
+
+button.icon-button:hover:not(:disabled) .icon-close {
+  -webkit-mask-image: url('assets/icons/close-hover.svg');
+  mask-image: url('assets/icons/close-hover.svg');
+}
+
+button.icon-button:hover:not(:disabled) .icon-kill {
+  -webkit-mask-image: url('assets/icons/kill-hover.svg');
+  mask-image: url('assets/icons/kill-hover.svg');
+}
+
+button.icon-button:hover:not(:disabled) .icon-minus {
+  -webkit-mask-image: url('assets/icons/minus-hover.svg');
+  mask-image: url('assets/icons/minus-hover.svg');
+}
+
+button.icon-button:hover:not(:disabled) .icon-restore {
+  -webkit-mask-image: url('assets/icons/restore-hover.svg');
+  mask-image: url('assets/icons/restore-hover.svg');
+}
+
+button.icon-button:hover:not(:disabled) .icon-layout-freeform {
+  -webkit-mask-image: url('assets/icons/layout-freeform-hover.svg');
+  mask-image: url('assets/icons/layout-freeform-hover.svg');
+}
+
+/* Point the Pocket-level restore/exit icon toward the page area. The left
+   rail matches the SVG's native direction; the right rail mirrors it. */
+body.pocket-position-right #restoreArchiveButton .icon-restore {
+  transform: scaleX(-1);
 }
 
 /* ---- Mission Cards ---- */
@@ -239,50 +1377,350 @@ header {
   margin-bottom: 12px;       /* vertical spacing (replaces grid gap) */
 }
 
-/* Colored top border instead of side bar for grid cards */
-.mission-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--warm-gray);
+.domain-card-shell {
+  position: relative;
+  break-inside: avoid;
+  margin-bottom: 10px;
 }
 
-.mission-card.has-active-bar::before { background: var(--status-active); }
-.mission-card.has-amber-bar::before { background: var(--accent-amber); }
-.mission-card.has-neutral-bar::before { background: var(--warm-gray); }
-
-.mission-card:hover {
-  box-shadow: 0 4px 20px var(--shadow);
-  transform: translateY(-1px);
+.archive-tabs .domain-card-shell {
+  min-width: 0;
+  margin-bottom: 0;
 }
 
-/* Closing animation — card scales down and fades out */
-.mission-card.closing {
-  opacity: 0;
-  transform: scale(0.9);
-  transition: opacity 0.25s ease, transform 0.25s ease;
+.domain-card-shell .domain-card {
+  /* Match Open tab action cells so both icon columns share the same centers. */
+  --group-action-size: 31px;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 0;
+  padding: 2px 8px 7px;
+  gap: 5px;
+  border-radius: 6px;
+  background: var(--ptk-pocket-surface);
+  backdrop-filter: var(--ptk-pocket-backdrop);
+  -webkit-backdrop-filter: var(--ptk-pocket-backdrop);
+}
+
+/* Only Open-area Captains carry their configured identity color. The tint is
+   confined to the outer domain frame: chip transparency and backdrop blur
+   remain unchanged, while Pocket cards use the ordinary neutral treatment. */
+.captain-group-card[data-area="open"] {
+  --captain-theme-rgb: 95 99 104;
+  --captain-selection-surface: #f1f1ef;
+  background: rgb(var(--captain-theme-rgb) / 0.07);
+  border-color: rgb(var(--captain-theme-rgb) / 0.25);
+}
+
+.captain-group-card[data-area="open"].captain-color-blue {
+  --captain-theme-h: 217;
+  --captain-theme-s: 90%;
+  --captain-theme-rgb: 66 133 244;
+  --captain-selection-surface: #e9f3f7;
+}
+.captain-group-card[data-area="open"].captain-color-red {
+  --captain-theme-h: 4;
+  --captain-theme-s: 71%;
+  --captain-theme-rgb: 217 48 37;
+  --captain-selection-surface: #faecec;
+}
+.captain-group-card[data-area="open"].captain-color-yellow {
+  --captain-theme-h: 44;
+  --captain-theme-s: 100%;
+  --captain-theme-rgb: 214 157 0;
+  --captain-selection-surface: #faf3dd;
+}
+.captain-group-card[data-area="open"].captain-color-green {
+  --captain-theme-h: 151;
+  --captain-theme-s: 83%;
+  --captain-theme-rgb: 15 148 83;
+  --captain-selection-surface: #eef3ed;
+}
+.captain-group-card[data-area="open"].captain-color-pink {
+  --captain-theme-h: 325;
+  --captain-theme-s: 67%;
+  --captain-theme-rgb: 206 62 146;
+  --captain-selection-surface: #f9f2f5;
+}
+.captain-group-card[data-area="open"].captain-color-purple {
+  --captain-theme-h: 283;
+  --captain-theme-s: 44%;
+  --captain-theme-rgb: 142 68 173;
+  --captain-selection-surface: #f6f3f8;
+}
+.captain-group-card[data-area="open"].captain-color-cyan {
+  --captain-theme-h: 187;
+  --captain-theme-s: 100%;
+  --captain-theme-rgb: 0 158 179;
+  --captain-selection-surface: #e7f3f5;
+}
+.captain-group-card[data-area="open"].captain-color-orange {
+  --captain-theme-h: 14;
+  --captain-theme-s: 91%;
+  --captain-theme-rgb: 231 76 27;
+  --captain-selection-surface: #f8ecdf;
+}
+
+.active-section {
+  min-height: 0;
+}
+
+.active-section .missions {
+  --open-column-gap: 18px;
+  --dashboard-card-min-width: 205px;
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(
+    var(--visible-dashboard-columns, var(--dashboard-columns, 3)),
+    minmax(min(100%, var(--dashboard-card-min-width)), 1fr)
+  );
+  column-gap: var(--open-column-gap);
+  row-gap: 0;
+  align-items: start;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.active-section .missions[data-layout-columns="3"][data-visible-columns="2"] {
+  width: calc(66.666667% - 6px);
+}
+
+.active-section .missions[data-layout-columns="3"][data-visible-columns="1"] {
+  width: calc(33.333333% - 12px);
+}
+
+.active-section .missions[data-layout-columns="2"][data-visible-columns="1"] {
+  width: calc(50% - 9px);
+}
+
+/* Open groups are assigned to fixed in-memory columns. Their slots stay put
+   while tabs are removed; a page refresh rebuilds and rebalances the columns. */
+.open-group-layout-column {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.open-group-layout-placeholder {
+  flex: 0 0 auto;
+  margin-bottom: 10px;
   pointer-events: none;
 }
 
-.mission-card.collapsed {
-  display: none !important;
+@media (max-width: 760px) {
+  .active-section .missions {
+    --open-column-gap: 14px;
+    grid-template-columns: repeat(var(--visible-dashboard-columns, 2), minmax(0, 1fr));
+  }
+
+  .active-section .missions[data-layout-columns="2"][data-visible-columns="1"] {
+    width: calc(50% - 7px);
+  }
 }
 
-/* Old side status bar — hidden, replaced by top border via ::before */
-.status-bar {
-  display: none;
+@media (max-width: 520px) {
+  .active-section .missions {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    transform: none;
+  }
+}
+
+.domain-card .mission-top {
+  gap: 4px;
+  margin-bottom: 4px;
+  transform: none;
+}
+
+.domain-card .mission-name {
+  font-size: 12px;
+  font-weight: 500;
+  /* Inter's descenders extend beyond a 1em line box. Extra line height and
+     vertical padding prevent overflow:hidden from clipping their lower half. */
+  line-height: 1.25;
+  padding-block: 2px;
+  letter-spacing: 0.3px;
+}
+
+.captain-group-title,
+.domain-group-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.captain-group-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  background-color: currentColor;
+  -webkit-mask: url('assets/icons/task-groups/circle.svg') center / contain no-repeat;
+  mask: url('assets/icons/task-groups/circle.svg') center / contain no-repeat;
+}
+
+.task-group-icon--book {
+  -webkit-mask-image: url('assets/icons/task-groups/book.svg');
+  mask-image: url('assets/icons/task-groups/book.svg');
+}
+
+.task-group-icon--bambu {
+  -webkit-mask-image: url('assets/icons/task-groups/bambu.svg');
+  mask-image: url('assets/icons/task-groups/bambu.svg');
+}
+
+.domain-group-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  background-color: currentColor;
+  -webkit-mask: url('assets/icons/circle.svg') center / contain no-repeat;
+  mask: url('assets/icons/circle.svg') center / contain no-repeat;
+}
+
+.domain-group-icon--bambu {
+  -webkit-mask: url('assets/icons/Bambu.svg') center / contain no-repeat;
+  mask: url('assets/icons/Bambu.svg') center / contain no-repeat;
+}
+
+.domain-group-icon--movie {
+  -webkit-mask: url('assets/icons/movie.svg') center / contain no-repeat;
+  mask: url('assets/icons/movie.svg') center / contain no-repeat;
+}
+
+.is-dormant-pocket-card .domain-group-icon:not(.has-custom-domain-icon) {
+  -webkit-mask-image: url('assets/icons/circle-dashed.svg');
+  mask-image: url('assets/icons/circle-dashed.svg');
+}
+
+/* An Open Captain card is split locally into Keep (above) and Pending (below).
+   These are dashboard drop zones only; they do not represent Chrome groups. */
+.captain-subgroup {
+  min-height: 0;
+}
+
+.captain-subgroup .mission-pages {
+  min-height: 0;
+}
+
+.captain-subgroup-divider {
+  --captain-divider-action-size: 31px;
+  position: relative;
+  display: flex;
+  height: 31px;
+  min-height: 31px;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+}
+
+.captain-subgroup-divider-dot {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 5px;
+  border-radius: 50%;
+  background: rgba(82, 82, 82, 0.18);
+}
+
+.captain-subgroup-divider-line {
+  position: relative;
+  z-index: 0;
+  height: 1px;
+  min-width: 0;
+  flex: 1 1 auto;
+  border-radius: 999px;
+  background: rgba(82, 82, 82, 0.09);
+  box-shadow: 0 0 4px rgba(82, 82, 82, 0.025);
+}
+
+/* Matches the UI Kit card-drag indicator. Its top position is supplied by the
+   drag logic so it can mark any insertion point in either Captain subgroup. */
+.captain-subgroup-drop-indicator {
+  position: absolute;
+  top: var(--captain-drop-indicator-top, 50%);
+  right: 14px;
+  left: 14px;
+  z-index: 4;
+  height: 1px;
+  border-radius: 999px;
+  background: rgba(82, 82, 82, 0.14);
+  box-shadow: 0 0 4px rgba(82, 82, 82, 0.04);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition: opacity 100ms ease;
+}
+
+.captain-group-card.is-captain-drop-target .captain-subgroup-drop-indicator {
+  opacity: 1;
+}
+
+.captain-subgroup-actions {
+  --group-action-size: var(--captain-divider-action-size);
+  position: relative;
+  z-index: 3;
+  height: var(--captain-divider-action-size);
+  align-self: center;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease, visibility 0s linear 120ms;
+}
+
+.captain-group-card:hover .captain-subgroup-actions {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+
+.domain-card .mission-pages {
+  gap: 3px;
+}
+
+/* Archived content remains available but visually secondary. */
+.archive-tabs .mission-top {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.archive-tabs .mission-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.archive-tabs .mission-top > :not(.mission-name) {
+  flex: 0 0 auto;
+}
+
+.archive-tabs .domain-card {
+  /* Archived tab rows use 28px action cells. */
+  --group-action-size: 28px;
+}
+
+/* When domain grouping is disabled, loose Pocket chips are rendered directly
+   without a synthetic domain frame or heading. Captain cards keep the normal
+   grouped treatment alongside them. */
+.archive-tabs .domain-card.pocket-loose-card {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  overflow: visible;
+}
+
+.archive-tabs .pocket-loose-card .mission-content {
+  width: 100%;
 }
 
 .mission-content {
   min-width: 0;
-}
-
-/* Hide the right-side meta (page count) — info is already in the badge */
-.mission-meta {
-  display: none;
 }
 
 .mission-top {
@@ -294,59 +1732,9 @@ header {
 }
 
 .mission-name {
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--ink);
-  letter-spacing: -0.2px;
-}
-
-.mission-tag {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 3px;
-}
-
-.mission-tag.active {
-  color: var(--status-active);
-  background: rgba(61, 122, 74, 0.08);
-}
-
-.mission-tag.cooling {
-  color: var(--status-cooling);
-  background: rgba(184, 137, 46, 0.08);
-}
-
-.mission-tag.abandoned {
-  color: var(--status-abandoned);
-  background: rgba(179, 90, 90, 0.08);
-}
-
-/* Tab indicator badge — shows how many Chrome tabs are still open for this mission */
-.open-tabs-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--accent-amber);
-  background: rgba(200, 113, 58, 0.08);
-  padding: 2px 8px;
-  border-radius: 3px;
-}
-
-.open-tabs-badge svg {
-  width: 10px;
-  height: 10px;
-}
-
-.mission-summary {
-  font-size: 13px;
-  color: var(--muted);
-  line-height: 1.5;
-  margin-bottom: 8px;
+  font-weight: 450;
+  font-size: 16px;
+  color: rgb(82, 82, 82);
 }
 
 .mission-pages {
@@ -357,23 +1745,50 @@ header {
 
 /* ---- Tab row — each tab is a full-width row with favicon, title, and actions ---- */
 .page-chip {
-  font-size: 13px;
-  color: var(--ink);
-  background: transparent;
-  padding: 8px 4px;
-  border-radius: 0;
-  border: none;
-  border-bottom: 1px solid rgba(154, 145, 138, 0.1);
+  --chip-action-multiply-surface: transparent;
+  --tab-card-height: 31px;
+  --duplicate-dismiss-width: 31px;
+  --ptk-card-radius: 4px;
+  min-height: var(--tab-card-height);
+  height: var(--tab-card-height);
+  color: rgb(82, 82, 82);
+  background: var(--ptk-card-surface-fixed);
+  /* Paint beneath the translucent border so multiply hover cannot expose a
+     pale compositing seam around the chip edge. */
+  background-clip: border-box;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  padding: 0 0 0 8px;
+  border: 1.25px solid var(--ptk-card-border);
+  border-radius: var(--ptk-card-radius);
+  overflow: hidden;
   position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
-  line-height: 1.4;
+  font-family: var(--ptk-font-sans);
+  font-size: 11.2px;
+  font-weight: 450;
+  line-height: 1.18;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.page-chip:last-child,
-.page-chip-overflow {
-  border-bottom: none;
+/* Keep the chip's own surface intact and multiply the action tint over it. */
+.page-chip::before {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  background: var(--chip-action-multiply-surface);
+  content: '';
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.page-chip > :is(.chip-favicon, .chip-text, .chip-actions) {
+  position: relative;
+  z-index: 2;
 }
 
 /* Favicon */
@@ -382,40 +1797,201 @@ header {
   height: 16px;
   flex-shrink: 0;
   border-radius: 2px;
+  mix-blend-mode: multiply;
 }
 
-/* Title text — wraps naturally, no truncation */
+/* Match the Dashboard UI Kit's Single Paper Card title treatment. */
 .chip-text {
   flex: 1;
   min-width: 0;
-  /* Show up to 2 lines, then ellipsis */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  color: rgb(96, 96, 96);
+  font-family: var(--ptk-font-sans);
+  font-size: 12px;
+  font-weight: 450;
+  line-height: 1.;
+  /* Single-line tab titles preserve card height and action placement. */
+  display: block;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  letter-spacing: 0.1px;
 }
 
-/* Duplicate badge */
-.chip-dupe-badge {
-  color: var(--accent-amber);
-  font-weight: 600;
+.chip-rename-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  color: rgb(96, 96, 96);
+  background: transparent;
+  font: inherit;
+  letter-spacing: 0.1px;
 }
 
-/* Duplicate border highlight */
+.page-chip.is-renaming {
+  cursor: text;
+}
+
+/* Compact count badge for a displayed tab that has duplicate copies. */
+.chip-dupe-indicator {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  /* Above chip content (z-index: 2), action multiply overlays, and the rear
+     duplicate-card layer. */
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--ptk-duplicate-red);
+  color: white;
+  font-size: 7px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+/* Error chips retain the existing cleanup treatment. Duplicates are given a
+   stacked-card cue below instead, so the two cleanup reasons stay distinct. */
+.page-chip.cleanup-item:not(.chip-has-dupes),
+.page-chip.chip-error {
+  border-color: var(--ptk-candidate-border);
+  border-style: dashed;
+}
+
+/* The wrapper owns the duplicate's rear layer, leaving the real chip intact
+   above it so hover blur remains clipped by the original chip frame. */
+.page-chip-wrapper {
+  position: relative;
+  min-width: 0;
+}
+
+.page-chip-wrapper.has-duplicate-stack {
+  margin-top: 3px;
+  margin-bottom: 5px;
+  overflow: visible;
+}
+
+.page-chip-wrapper.has-duplicate-stack::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 1.25px solid rgba(82, 82, 82, 0.1);
+  border-radius: var(--ptk-card-radius);
+  background: rgba(228, 228, 228, 0.36);
+  clip-path: polygon(
+    50% 0,
+    100% 0,
+    100% 100%,
+    0 100%,
+    0 calc(100% - 3px),
+    50% 100%,
+    calc(100% - 3px) 100%,
+    calc(100% - 3px) 1.5px
+  );
+  content: '';
+  pointer-events: none;
+  transform: translate(4px, 0) rotate(-1.5deg);
+  transform-origin: 50% 50%;
+}
+
+.page-chip-wrapper.has-duplicate-stack > .page-chip {
+  position: relative;
+  z-index: 1;
+  border: 1.25px solid rgba(82, 82, 82, 0.1) !important;
+}
+
+.page-chip.candidate {
+  --candidate-multiply-surface: var(--ptk-candidate-surface-fixed);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Removing the chip's own backdrop-filter stacking context above lets this
+   translucent gray-pink layer multiply against the actual Domain/Captain
+   surface behind the chip instead of compositing against an isolated card. */
+.page-chip.candidate::after {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: var(--candidate-multiply-surface);
+  content: '';
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* Desktop-style drag selection for individual tab chips. */
+.tab-marquee-selection {
+  position: fixed;
+  z-index: 1100;
+  border: 1px solid rgba(82, 104, 91, 0.34);
+  border-radius: 4px;
+  background: rgba(112, 139, 121, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+  pointer-events: none;
+}
+
+body.is-marquee-selecting,
+body.is-marquee-selecting * {
+  cursor: crosshair !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+.page-chip.is-marquee-selected {
+  border-color: var(--ptk-card-border-hover) !important;
+  background: var(--ptk-card-surface-hover) !important;
+  box-shadow: var(--ptk-card-shadow-hover);
+  z-index: 1;
+}
+
+.page-chip.candidate.is-marquee-selected {
+  border-color: var(--ptk-candidate-border) !important;
+}
+
+/* Captain selection uses the light surface paired with the frame color. */
+.captain-group-card[data-area="open"] .page-chip.is-marquee-selected {
+  background: var(--captain-selection-surface, var(--ptk-card-surface-hover)) !important;
+}
+
+/* Retained as a semantic duplicate hook for integrations using this class. */
 .chip-has-dupes {
-  border-color: rgba(200, 113, 58, 0.25);
+  border-color: rgba(82, 82, 82, 0.2) !important;
+border-style: solid !important;
+border-width: 1.25px !important;
 }
 
 /* Action buttons grouped on the right */
 .chip-actions {
   display: flex;
-  align-items: center;
-  gap: 2px;
+  align-self: stretch;
+  align-items: stretch;
+  gap: 0;
   flex-shrink: 0;
-  margin-left: auto;
+  margin-block: -1.25px;
+  margin-right: -1.25px;
+  margin-left: 14px;
 }
 
-/* ---- Chip action buttons (save + close) ---- */
+.archive-tabs .chip-actions {
+  margin-block: -1.25px;
+  margin-right: -1.25px;
+}
+
+/* ---- Chip action buttons ---- */
 .chip-action {
   display: inline-flex;
   align-items: center;
@@ -431,63 +2007,148 @@ header {
   flex-shrink: 0;
 }
 
-.chip-action svg {
-  width: 15px;
-  height: 15px;
-}
-
 .chip-action:hover {
   opacity: 1;
   background: rgba(154, 145, 138, 0.1);
 }
 
-.chip-save:hover {
-  color: var(--accent-sage);
-  background: rgba(90, 122, 98, 0.08);
-}
-
 .chip-close:hover {
   color: var(--status-abandoned);
-  background: rgba(179, 90, 90, 0.08);
+  background: rgba(82, 82, 82, 0.08);
 }
 
 .page-chip.clickable {
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.18s ease;
 }
 
 .page-chip.clickable:hover {
-  background: rgba(200, 113, 58, 0.04);
+  background: var(--ptk-card-surface-hover);
+  border-color: var(--ptk-card-border-hover);
+  box-shadow: var(--ptk-card-shadow-hover);
+  z-index: 1;
 }
 
-/* "+N more" overflow chip */
-.page-chip-overflow {
-  font-size: 12px;
-  color: var(--muted);
-  padding: 6px 4px;
+/* A child action is its own hover target. Do not also apply the stronger
+   whole-chip outline merely because the pointer is over Archive/Delete/Restore. */
+.page-chip.clickable:not(.candidate):has(.chip-actions > button:hover) {
+  border-color: var(--ptk-card-border);
 }
 
-/* mission-meta hidden — see above */
-
-.mission-time {
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: 4px;
+.page-chip.clickable.candidate:hover {
+  border-color: var(--ptk-candidate-border);
+  --candidate-multiply-surface: var(--ptk-candidate-surface-hover-fixed);
+  background: transparent;
 }
 
-.mission-page-count {
-  font-size: 20px;
-  font-family: 'Newsreader', serif;
-  font-weight: 300;
-  color: var(--ink);
-  line-height: 1;
+/* Keep only the transient pointer-down feedback. Tab Out has no persistent
+   selected/active state for tab cards. */
+.page-chip.clickable:active {
+  border-color: var(--ptk-card-border-active);
+  background: var(--ptk-card-surface-active);
+  box-shadow: 0 4px 13px rgba(24, 24, 24, 0.055), 0 1px 3px rgba(24, 24, 24, 0.035);
 }
 
-.mission-page-label {
-  font-size: 10px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
+.page-chip.clickable.candidate:active {
+  border-color: var(--ptk-candidate-border);
+}
+
+/* Immediate acknowledgement while Chrome processes a tab deletion. The card
+   closes upward from its bottom edge instead of pausing at partial
+   opacity. This stays on compositor-friendly transform/clip-path properties. */
+.page-chip.is-delete-pending,
+.mission-card.is-delete-pending {
+  animation: tabout-delete-exit 300ms cubic-bezier(.3, .72, .2, 1) forwards;
+  pointer-events: none;
+  transform-origin: center top;
+  will-change: transform, clip-path;
+}
+
+@keyframes tabout-delete-exit {
+  0% {
+    transform: translateY(0) scale(1);
+    clip-path: inset(0 0 0 0 round 6px);
+  }
+
+  18% {
+    transform: translateY(2px) scale(.985, .97);
+    clip-path: inset(0 0 0 0 round 6px);
+  }
+
+  100% {
+    transform: translateY(-10px) scale(.94, .9);
+    clip-path: inset(0 0 100% 0 round 6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-chip.is-delete-pending,
+  .mission-card.is-delete-pending {
+    animation-duration: 1ms;
+  }
+}
+
+/* Make the intent of each destructive or archival action visible on its card. */
+.page-chip.clickable:has(.chip-close:hover) {
+  --chip-action-multiply-surface: var(--ptk-action-delete-surface);
+  background: var(--ptk-card-action-surface) !important;
+}
+
+.page-chip.clickable:has(.archive-tab-button:hover) {
+  --chip-action-multiply-surface: var(--ptk-action-archive-surface);
+  background: var(--ptk-card-action-surface) !important;
+}
+
+.page-chip.clickable:has(.restore-tab-button:hover) {
+  --chip-action-multiply-surface: var(--ptk-action-archive-surface);
+  background: var(--ptk-card-action-surface) !important;
+}
+
+/* Preview the scope of a group-level action on every tab it will affect. Keep
+   this limited to header controls so Captain subgroup actions retain their own
+   narrower scope. */
+.domain-card:has(
+  .mission-top > .group-card-actions .group-archive-button:hover:not(:active)
+) .page-chip.clickable {
+  --chip-action-multiply-surface: var(--ptk-action-archive-surface);
+  background: var(--ptk-card-action-surface) !important;
+  box-shadow: var(--ptk-card-shadow-hover) !important;
+}
+
+/* Pocket group Restore previews exactly the chips that will be taken out,
+   using the same Archive recipe as a directly hovered Single Chip. */
+.archive-tabs .domain-card:has(
+  .mission-top > .group-card-actions .group-restore-button:hover:not(:active)
+) .page-chip.clickable {
+  --chip-action-multiply-surface: var(--ptk-action-archive-surface);
+  background: var(--ptk-card-action-surface) !important;
+  box-shadow: var(--ptk-card-shadow-hover) !important;
+}
+
+.domain-card:has(
+  .mission-top > .group-card-actions .group-close-button:hover:not(:active)
+) .page-chip.clickable {
+  --chip-action-multiply-surface: var(--ptk-action-delete-surface);
+  background: var(--ptk-card-action-surface) !important;
+  box-shadow: var(--ptk-card-shadow-hover) !important;
+}
+
+/* Divider actions apply only to the Captain Pending subgroup. Preview every
+   affected chip evenly, matching the scope of the eventual batch action. */
+.captain-group-card:has(
+  .captain-subgroup-actions .captain-pending-archive-button:hover:not(:active)
+) .captain-subgroup-pending .page-chip.clickable {
+  --chip-action-multiply-surface: var(--ptk-action-archive-surface);
+  background: var(--ptk-card-action-surface) !important;
+  box-shadow: var(--ptk-card-shadow-hover) !important;
+}
+
+.captain-group-card:has(
+  .captain-subgroup-actions .captain-pending-delete-button:hover:not(:active)
+) .captain-subgroup-pending .page-chip.clickable {
+  --chip-action-multiply-surface: var(--ptk-action-delete-surface);
+  background: var(--ptk-card-action-surface) !important;
+  box-shadow: var(--ptk-card-shadow-hover) !important;
 }
 
 /* ---- Actions row ---- */
@@ -499,7 +2160,7 @@ header {
 
 .action-btn {
   font-size: 11px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--ptk-font-sans);
   font-weight: 500;
   padding: 5px 14px;
   border-radius: 4px;
@@ -507,7 +2168,7 @@ header {
   background: var(--card-bg);
   color: var(--muted);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: border-color 0.2s, color 0.2s;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -518,41 +2179,14 @@ header {
   color: var(--ink);
 }
 
-.action-btn svg {
-  width: 12px;
-  height: 12px;
+.action-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
-.action-btn.primary {
-  background: var(--ink);
-  color: var(--paper);
-  border-color: var(--ink);
-}
-
-.action-btn.primary:hover {
-  opacity: 0.85;
-}
-
-.action-btn.close-tabs {
-  border-color: rgba(200, 113, 58, 0.3);
-  color: var(--accent-amber);
-  background: rgba(200, 113, 58, 0.04);
-}
-
-.action-btn.close-tabs:hover {
-  background: rgba(200, 113, 58, 0.1);
-  border-color: var(--accent-amber);
-}
-
-.action-btn.save-tabs {
-  border-color: rgba(90, 122, 98, 0.3);
-  color: var(--accent-sage);
-  background: rgba(90, 122, 98, 0.04);
-}
-
-.action-btn.save-tabs:hover {
-  background: rgba(90, 122, 98, 0.1);
-  border-color: var(--accent-sage);
+.action-btn:disabled:hover {
+  border-color: var(--warm-gray);
+  color: var(--muted);
 }
 
 .action-btn.danger {
@@ -564,27 +2198,550 @@ header {
   color: var(--status-abandoned);
 }
 
+/* Dashboard UI Kit — every action uses the same circular glass control. */
+button.icon-button {
+  width: var(--ptk-control-size) !important;
+  min-width: var(--ptk-control-size) !important;
+  min-height: var(--ptk-control-size) !important;
+  height: var(--ptk-control-size) !important;
+  padding: 0 !important;
+  border: 1px solid var(--ptk-glass-border) !important;
+  border-radius: 50% !important;
+  background: var(--ptk-glass-surface) !important;
+  box-shadow: var(--ptk-glass-shadow) !important;
+  color: #5b5b5b;
+  opacity: 1 !important;
+  backdrop-filter: var(--ptk-glass-blur);
+  -webkit-backdrop-filter: var(--ptk-glass-blur);
+  transition: var(--ptk-transition);
+}
+
+button.icon-button:hover:not(:disabled) {
+  border-color: var(--ptk-glass-border-hover) !important;
+  background: var(--ptk-glass-surface-hover) !important;
+  box-shadow: var(--ptk-glass-shadow-hover) !important;
+  color: #262626;
+}
+
+button.icon-button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+button.icon-button:disabled {
+  cursor: default;
+  opacity: 0.45 !important;
+}
+
+button.icon-button .button-icon {
+  width: 16px;
+  height: 16px;
+}
+
+button.action-btn.icon-button .icon-close {
+  -webkit-mask-image: url('assets/icons/close-glass.svg');
+  mask-image: url('assets/icons/close-glass.svg');
+}
+
+button.action-btn.icon-button .icon-kill {
+  -webkit-mask-image: url('assets/icons/kill-glass.svg');
+  mask-image: url('assets/icons/kill-glass.svg');
+}
+
+button.action-btn.icon-button .icon-restore {
+  -webkit-mask-image: url('assets/icons/restore-glass.svg');
+  mask-image: url('assets/icons/restore-glass.svg');
+}
+
+button.action-btn.icon-button .icon-layout-freeform {
+  -webkit-mask-image: url('assets/icons/layout-freeform-glass.svg');
+  mask-image: url('assets/icons/layout-freeform-glass.svg');
+}
+
+button.action-btn.icon-button:hover:not(:disabled) {
+  color: #262626 !important;
+}
+
+button.action-btn.icon-button:hover:not(:disabled) .icon-close {
+  -webkit-mask-image: url('assets/icons/close-glass-hover.svg');
+  mask-image: url('assets/icons/close-glass-hover.svg');
+}
+
+button.action-btn.icon-button:hover:not(:disabled) .icon-kill {
+  -webkit-mask-image: url('assets/icons/kill-glass-hover.svg');
+  mask-image: url('assets/icons/kill-glass-hover.svg');
+}
+
+button.action-btn.icon-button:hover:not(:disabled) .icon-restore {
+  -webkit-mask-image: url('assets/icons/restore-glass-hover.svg');
+  mask-image: url('assets/icons/restore-glass-hover.svg');
+}
+
+button.action-btn.icon-button:hover:not(:disabled) .icon-layout-freeform {
+  -webkit-mask-image: url('assets/icons/layout-freeform-glass-hover.svg');
+  mask-image: url('assets/icons/layout-freeform-glass-hover.svg');
+}
+
+/* Per-tab actions are compact, matte circles.
+   Their buttons retain a generous hit target, while the visible background
+   stays circular rather than turning into a pill. */
+button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close
+).icon-button {
+  width: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  height: 18px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: rgba(82, 82, 82, 0.56);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  position: relative;
+  isolation: isolate;
+}
+
+/* Matte tab and group actions use the ordinary system arrow. Glass toolbar
+   controls intentionally retain their normal pointer cursor. */
+button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close,
+  .group-card-action
+).icon-button:not(:disabled) {
+  cursor: default;
+}
+
+button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close
+).icon-button:hover:not(:disabled),
+button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close
+).icon-button:active:not(:disabled) {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close
+).icon-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: transparent;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: background 120ms ease, transform 100ms ease;
+}
+
+button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close
+).icon-button:hover:not(:disabled)::before {
+  background: rgba(82, 82, 82, 0.085);
+}
+
+button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close
+).icon-button:active:not(:disabled)::before {
+  background: rgba(82, 82, 82, 0.24);
+  transform: translate(-50%, -50%) scale(0.9);
+}
+
+button:is(
+  .archive-tab-button,
+  .restore-tab-button
+).icon-button:hover:not(:disabled) {
+  color: rgba(82, 82, 82, 0.75);
+}
+
+button.chip-close.icon-button:hover:not(:disabled) {
+  color: var(--ptk-duplicate-red);
+}
+
+button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close
+).icon-button .button-icon {
+  position: relative;
+  z-index: 1;
+  width: 13px;
+  height: 13px;
+}
+
+button.chip-close.icon-button:hover:not(:disabled)::before {
+  background: rgba(196, 85, 77, 0.08);
+}
+
+button.chip-close.icon-button:active:not(:disabled)::before {
+  background: rgba(196, 85, 77, 0.16);
+}
+
+/* Group actions live inside the card header. They share the tab-card action
+   size, sit flush at the top-right, and deliberately use no glass treatment. */
+.domain-card .mission-top:has(.group-card-actions) {
+  min-height: var(--group-action-size);
+  align-items: stretch;
+  flex-wrap: nowrap;
+}
+
+.domain-card .mission-top:has(.group-card-actions) .mission-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  align-self: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-card-actions {
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+  flex: 0 0 auto;
+  gap: 0;
+}
+
+/* Header-level group actions keep their layout space, but remain unavailable
+   until the pointer enters that specific group card. Divider actions are not
+   descendants of .mission-top and therefore remain unaffected. */
+.domain-card .mission-top > .group-card-actions {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease, visibility 0s linear 120ms;
+}
+
+.domain-card:hover .mission-top > .group-card-actions {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+
+.group-card-actions > .group-card-action.icon-button {
+  display: grid !important;
+  place-items: center;
+  width: var(--group-action-size) !important;
+  min-width: var(--group-action-size) !important;
+  min-height: var(--group-action-size) !important;
+  height: var(--group-action-size) !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: rgba(82, 82, 82, 0.56);
+  position: relative;
+}
+
+.group-card-actions > .group-card-action.icon-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  width: calc(var(--group-action-size) - 4px);
+  height: calc(var(--group-action-size) - 4px);
+  border-radius: 4px;
+  background: transparent;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: background 120ms ease, transform 100ms ease;
+}
+
+.group-card-actions > .group-card-action.icon-button:hover:not(:disabled),
+.group-card-actions > .group-card-action.icon-button:active:not(:disabled) {
+  border: 0 !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+.group-card-actions > .group-archive-button.icon-button:hover:not(:disabled),
+.group-card-actions > .group-restore-button.icon-button:hover:not(:disabled) {
+  background: transparent !important;
+  color: rgba(82, 82, 82, 0.75);
+}
+
+.group-card-actions > .group-archive-button.icon-button:active:not(:disabled),
+.group-card-actions > .group-restore-button.icon-button:active:not(:disabled) {
+  background: transparent !important;
+}
+
+.group-card-actions > .group-close-button.icon-button:hover:not(:disabled) {
+  background: transparent !important;
+  color: var(--ptk-duplicate-red);
+}
+
+.group-card-actions > .group-close-button.icon-button:active:not(:disabled) {
+  background: transparent !important;
+}
+
+.group-card-actions > .group-archive-button.icon-button:hover:not(:disabled)::before,
+.group-card-actions > .group-restore-button.icon-button:hover:not(:disabled)::before {
+  background: transparent;
+}
+
+.group-card-actions > .group-archive-button.icon-button:active:not(:disabled)::before,
+.group-card-actions > .group-restore-button.icon-button:active:not(:disabled)::before {
+  background: rgba(82, 82, 82, 0.14);
+  transform: translate(-50%, -50%) scale(0.9);
+}
+
+.group-card-actions > .group-close-button.icon-button:hover:not(:disabled)::before {
+  background: transparent;
+}
+
+.group-card-actions > .group-close-button.icon-button:active:not(:disabled)::before {
+  background: rgba(196, 85, 77, 0.16);
+  transform: translate(-50%, -50%) scale(0.9);
+}
+
+.group-card-actions > .group-card-action.icon-button .button-icon {
+  position: relative;
+  z-index: 1;
+  width: 13px;
+  height: 13px;
+}
+
+.captain-subgroup-actions > .group-card-action.icon-button:disabled {
+  cursor: default;
+  opacity: 0.28;
+}
+
+/* The divider actions communicate hover only through the icon color and the
+   heavier hover mask; unlike header group actions, they have no round halo. */
+.captain-subgroup-actions > .group-card-action.icon-button::before {
+  display: none;
+}
+
+/* Each tab action occupies a square matching its tab card's height. */
+.page-chip .chip-actions > button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close
+).icon-button {
+  display: grid !important;
+  width: var(--tab-card-height) !important;
+  min-width: var(--tab-card-height) !important;
+  min-height: var(--tab-card-height) !important;
+  height: var(--tab-card-height) !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  place-items: center;
+}
+
+/* When Pocket is disabled in Options, remove Archive controls while keeping
+   Delete available on chips, group headers, and Captain dividers. */
+body.read-later-disabled .active-section .page-chip .chip-actions
+  > button.archive-tab-button.icon-button,
+body.read-later-disabled .active-section .group-card-actions
+  > button.group-archive-button.icon-button {
+  display: none !important;
+}
+
+/* A tab action uses a narrow blurred strip instead of a solid square. The
+   strip extends beyond the card vertically before the card clips it, so the
+   softness spreads only left/right while both horizontal edges stay crisp. */
+.page-chip .chip-actions > button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close
+).icon-button::before {
+  display: block;
+  top: -12px;
+  bottom: -12px;
+  left: 50%;
+  width: 18px;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  filter: blur(8px);
+  opacity: 0;
+  transform: translateX(-50%);
+  transition: background 120ms ease, opacity 120ms ease;
+}
+
+.page-chip .chip-actions > button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close
+):last-child.icon-button {
+  border-radius: 0 calc(var(--ptk-card-radius) - 1px) calc(var(--ptk-card-radius) - 1px) 0 !important;
+}
+
+/* Keep the real button transparent so the feathered layer remains visible. */
+.page-chip .chip-actions > :is(
+  .archive-tab-button,
+  .restore-tab-button
+).icon-button:hover:not(:disabled) {
+  background: transparent !important;
+}
+
+.page-chip .chip-actions > .chip-close.icon-button:hover:not(:disabled) {
+  background: transparent !important;
+}
+
+.page-chip .chip-actions > :is(
+  .archive-tab-button,
+  .restore-tab-button
+).icon-button:hover:not(:disabled)::before {
+  background: var(--ptk-action-archive-surface);
+  opacity: 1;
+}
+
+.page-chip .chip-actions > .chip-close.icon-button:hover:not(:disabled)::before {
+  background: var(--ptk-action-delete-surface);
+  opacity: 1;
+}
+
+.page-chip .chip-actions > .archive-tab-button.icon-button:active:not(:disabled),
+.page-chip .chip-actions > .restore-tab-button.icon-button:active:not(:disabled) {
+  background: rgba(82, 82, 82, 0.14) !important;
+}
+
+.page-chip .chip-actions > .chip-close.icon-button:active:not(:disabled) {
+  background: rgba(196, 85, 77, 0.16) !important;
+}
+
+.page-chip .chip-actions > button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close
+).icon-button:active:not(:disabled)::before {
+  transform: none;
+}
+
+button.icon-button:is(
+  [data-action="kill-archive-live"],
+  [data-action="kill-pocket-item"],
+  [data-action="clear-archive"],
+  [data-action="close-single-tab"],
+  [data-action="close-domain-tabs"]
+):hover:not(:disabled) {
+  color: var(--ptk-color-danger);
+}
+
+/* CSS masks cannot be stroked. Matte controls therefore use dedicated,
+   heavier SVG masks; hover swaps to a visibly bolder version. */
+button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close,
+  .group-card-action
+).icon-button .icon-archive {
+  -webkit-mask-image: url('assets/icons/archive-matte.svg') !important;
+  mask-image: url('assets/icons/archive-matte.svg') !important;
+}
+
+button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close,
+  .group-card-action
+).icon-button .icon-restore {
+  -webkit-mask-image: url('assets/icons/restore-matte.svg') !important;
+  mask-image: url('assets/icons/restore-matte.svg') !important;
+}
+
+button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close,
+  .group-card-action
+).icon-button .icon-close {
+  -webkit-mask-image: url('assets/icons/close-matte.svg') !important;
+  mask-image: url('assets/icons/close-matte.svg') !important;
+}
+
+button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close,
+  .group-card-action
+).icon-button:hover:not(:disabled) .icon-archive {
+  -webkit-mask-image: url('assets/icons/archive-matte-hover.svg') !important;
+  mask-image: url('assets/icons/archive-matte-hover.svg') !important;
+}
+
+button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close,
+  .group-card-action
+).icon-button:hover:not(:disabled) .icon-restore {
+  -webkit-mask-image: url('assets/icons/restore-matte-hover.svg') !important;
+  mask-image: url('assets/icons/restore-matte-hover.svg') !important;
+}
+
+button:is(
+  .archive-tab-button,
+  .restore-tab-button,
+  .chip-close,
+  .group-card-action
+).icon-button:hover:not(:disabled) .icon-close {
+  -webkit-mask-image: url('assets/icons/close-matte-hover.svg') !important;
+  mask-image: url('assets/icons/close-matte-hover.svg') !important;
+}
+
 /* ---- Toast notification ---- */
 .toast {
   position: fixed;
-  bottom: 32px;
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%) translateY(80px);
-  background: var(--ink);
-  color: var(--paper);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
+    rgba(108, 108, 108, 0.82);
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(24, 24, 24, 0.42);
+  font-family: var(--ptk-font-sans);
+  font-size: 11px;
   font-weight: 500;
-  padding: 12px 24px;
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  padding: 6px 11px;
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 5px 16px rgba(24, 24, 24, 0.12);
+  backdrop-filter: blur(12px) saturate(100%);
+  -webkit-backdrop-filter: blur(12px) saturate(100%);
   z-index: 100;
   opacity: 0;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
+}
+
+.toast.is-destructive {
+  border-color: rgba(255, 255, 255, 0.16);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.025)),
+    rgba(58, 58, 58, 0.84);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 5px 16px rgba(24, 24, 24, 0.16);
 }
 
 .toast.visible {
@@ -593,566 +2750,191 @@ header {
 }
 
 .toast svg {
-  width: 16px;
-  height: 16px;
-  color: var(--status-active);
+  width: 13px;
+  height: 13px;
+  color: rgba(255, 255, 255, 0.78);
 }
 
-/* ---- Footer ---- */
-footer {
-  margin-top: 48px;
-  padding-top: 20px;
-  border-top: 1px solid var(--warm-gray);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.footer-stats {
-  display: flex;
-  gap: 32px;
-}
-
-.stat {
-  text-align: center;
-}
-
-.stat-num {
-  font-family: 'Newsreader', serif;
-  font-size: 28px;
-  font-weight: 300;
-  color: var(--ink);
-  line-height: 1;
-  transition: all 0.3s;
-}
-
-.stat-label {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--muted);
-  margin-top: 4px;
-}
-
-.last-refresh {
-  font-size: 11px;
-  color: var(--muted);
-}
-
-.refresh-btn {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--accent-amber);
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-/* ---- Animations ---- */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-header { animation: fadeUp 0.5s ease both; }
-.tab-cleanup-banner { animation: fadeUp 0.5s ease 0.1s both; }
-.nudge-banner { animation: fadeUp 0.5s ease 0.15s both; }
-.active-section .section-header { animation: fadeUp 0.5s ease 0.2s both; }
-.active-section .missions .mission-card:nth-child(1) { animation: fadeUp 0.4s ease 0.25s both; }
-.active-section .missions .mission-card:nth-child(2) { animation: fadeUp 0.4s ease 0.3s both; }
-.active-section .missions .mission-card:nth-child(3) { animation: fadeUp 0.4s ease 0.35s both; }
-.active-section .missions .mission-card:nth-child(4) { animation: fadeUp 0.4s ease 0.4s both; }
-.abandoned-section .section-header { animation: fadeUp 0.5s ease 0.45s both; }
-.abandoned-section .missions .mission-card:nth-child(1) { animation: fadeUp 0.4s ease 0.5s both; }
-.abandoned-section .missions .mission-card:nth-child(2) { animation: fadeUp 0.4s ease 0.55s both; }
-.abandoned-section .missions .mission-card:nth-child(3) { animation: fadeUp 0.4s ease 0.6s both; }
-footer { animation: fadeUp 0.5s ease 0.65s both; }
-
-.deferred-list .deferred-item:nth-child(1) { animation-delay: 0.05s; }
-.deferred-list .deferred-item:nth-child(2) { animation-delay: 0.1s; }
-.deferred-list .deferred-item:nth-child(3) { animation-delay: 0.15s; }
-.deferred-list .deferred-item:nth-child(4) { animation-delay: 0.2s; }
-.deferred-list .deferred-item:nth-child(5) { animation-delay: 0.25s; }
-.deferred-column .section-header { animation: fadeUp 0.5s ease 0.1s both; }
-
-
-/* ================================================================
-   STATIC DEFAULT VIEW — new elements added for "AI on demand"
-   ================================================================ */
-
-/* ---- Neutral status bar (domain-grouped cards, no AI color) ---- */
-.status-bar.neutral {
-  background: var(--warm-gray);
-}
-
-/* ---- "Domain" tag on static domain cards ---- */
-.mission-tag.neutral {
-  color: var(--muted);
-  background: rgba(154, 145, 138, 0.1);
-}
-
-/* ================================================================
-   MISSIONS EMPTY STATE
-   Shown when all mission cards have been closed.
-   A calm, satisfying "you did it" moment.
-   ================================================================ */
-
-.missions-empty-state {
-  /* Takes the full width — spans all columns */
-  column-span: all;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-
-  padding: 56px 24px;
-  text-align: center;
-
-  animation: fadeUp 0.5s ease both;
-}
-
-/* CSS-drawn checkmark in a glowing circle */
-.empty-checkmark {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: rgba(90, 122, 98, 0.1);
-  border: 1.5px solid rgba(90, 122, 98, 0.3);
-
-  /* Soft sage glow */
-  box-shadow: 0 0 0 8px rgba(90, 122, 98, 0.05),
-              0 0 0 16px rgba(90, 122, 98, 0.03);
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  /* Pop in with a gentle scale animation */
-  animation: checkPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
-}
-
-.empty-checkmark svg {
-  width: 26px;
-  height: 26px;
-  color: var(--accent-sage);
-  stroke-width: 2.5;
-}
-
-@keyframes checkPop {
-  from { transform: scale(0.6); opacity: 0; }
-  to   { transform: scale(1);   opacity: 1; }
-}
-
-.empty-title {
-  font-family: 'Newsreader', serif;
-  font-size: 20px;
-  font-weight: 400;
-  font-style: italic;
-  color: var(--ink);
-  letter-spacing: -0.3px;
-}
-
-.empty-subtitle {
-  font-size: 13px;
-  color: var(--muted);
-  font-weight: 400;
-  letter-spacing: 0.3px;
-}
-
-
-/* ================================================================
-   UPDATE BANNER
-   Appears at the very top of the page when a new version is available.
-   Intentionally thin and unobtrusive — it's informational, not urgent.
-   The warm sage green palette feels calm and positive ("new thing!"),
-   contrasting with the amber/rose warning tones used elsewhere.
-   ================================================================ */
-
-.update-banner {
-  /* Thin bar — sits above the header, below the container's top padding */
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-
-  /* Sage green tint — matches accent-sage but very light */
-  background: linear-gradient(135deg, rgba(90, 122, 98, 0.05), rgba(90, 122, 98, 0.10));
-  border: 1px solid rgba(90, 122, 98, 0.22);
-  border-radius: 8px;
-  padding: 10px 16px;
-
-  /* Push the header down slightly */
-  margin-bottom: 24px;
-
-  /* Slide in from above when it appears */
-  animation: bannerSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes bannerSlideIn {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* Left cluster: icon + text */
-.update-banner-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-  min-width: 0; /* prevents text overflow from breaking layout */
-}
-
-.update-banner-icon {
-  width: 16px;
-  height: 16px;
-  color: var(--accent-sage);
-  flex-shrink: 0;
-  opacity: 0.85;
-}
-
-.update-banner-text {
-  font-size: 13px;
-  color: var(--ink);
-  font-weight: 400;
-  line-height: 1.4;
-  opacity: 0.85;
-}
-
-/* Right cluster: action button + dismiss X */
-.update-banner-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-/* "Update now" button — small, filled, sage green */
-.update-banner-btn {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  color: #fff;
-  background: var(--accent-sage);
-  border: none;
-  border-radius: 5px;
-  padding: 5px 12px;
-  cursor: pointer;
-  letter-spacing: 0.2px;
-  transition: background 0.2s, opacity 0.2s;
-  white-space: nowrap;
-}
-
-.update-banner-btn:hover {
-  background: #4a6952; /* slightly darker sage */
-}
-
-.update-banner-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-/* Dismiss X button — minimal, icon-only */
-.update-banner-dismiss {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  border-radius: 4px;
-  color: var(--muted);
-  transition: background 0.15s, color 0.15s;
-  padding: 0;
-  flex-shrink: 0;
-}
-
-.update-banner-dismiss:hover {
-  background: rgba(26, 22, 19, 0.06);
-  color: var(--ink);
-}
-
-.update-banner-dismiss svg {
-  width: 14px;
-  height: 14px;
-}
-
-
-/* ================================================================
-   SAVED FOR LATER — Checklist Column + Archive
-   ================================================================ */
-
-/* ---- Two-column layout ---- */
-.dashboard-columns {
-  display: flex;
-  gap: 32px;
-  align-items: flex-start;
-}
-
-/* Open tabs column keeps the grid layout */
-.dashboard-columns .active-section {
-  flex: 1;
-  min-width: 600px;
-}
-
-/* Saved for later column — fixed width on the right, scrolls independently */
-.deferred-column {
-  width: 280px;
-  flex-shrink: 0;
-  position: sticky;
-  top: 32px;
-  max-height: calc(100vh - 64px);
-  overflow-y: auto;
-}
-
-/* On narrow screens, stack vertically */
-@media (max-width: 800px) {
-  .dashboard-columns {
-    flex-direction: column;
-  }
-  .deferred-column {
-    width: 100%;
-    position: static;
-  }
-}
-
-/* ---- Checklist items ---- */
-.deferred-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(154, 145, 138, 0.12);
-  animation: fadeUp 0.3s ease both;
-}
-
-.deferred-item:last-child {
-  border-bottom: none;
-}
-
-/* Custom checkbox */
-.deferred-checkbox {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--warm-gray);
-  border-radius: 4px;
-  cursor: pointer;
-  flex-shrink: 0;
-  margin-top: 1px;
-  transition: all 0.2s;
-  position: relative;
-}
-
-.deferred-checkbox:hover {
-  border-color: var(--accent-sage);
-}
-
-.deferred-checkbox:checked {
-  background: var(--accent-sage);
-  border-color: var(--accent-sage);
-}
-
-/* Checkmark inside the checkbox */
-.deferred-checkbox:checked::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 5px;
-  width: 4px;
-  height: 8px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-/* Item content (title, domain, time) */
-.deferred-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.deferred-title {
-  font-size: 13px;
-  color: var(--ink);
-  text-decoration: none;
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  transition: color 0.15s;
-}
-
-.deferred-title:hover {
-  color: var(--accent-amber);
-}
-
-.deferred-meta {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 2px;
-  display: flex;
-  gap: 8px;
-}
-
-/* Checked-off item — strikethrough + faded */
-.deferred-item.checked .deferred-title {
-  text-decoration: line-through;
-  color: var(--muted);
-}
-
-.deferred-item.checked .deferred-meta {
-  opacity: 0.5;
-}
-
-/* Dismiss (X) button */
-.deferred-dismiss {
-  background: none;
-  border: none;
-  color: var(--muted);
-  cursor: pointer;
-  padding: 2px;
-  opacity: 0.3;
-  transition: opacity 0.15s, color 0.15s;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.deferred-dismiss svg {
-  width: 14px;
-  height: 14px;
-}
-
-.deferred-dismiss:hover {
-  opacity: 1;
-  color: var(--status-abandoned);
-}
-
-/* Slide-out animation for items being removed */
-.deferred-item.removing {
-  opacity: 0;
-  transform: translateX(20px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-/* ---- Empty state ---- */
-.deferred-empty {
-  font-size: 13px;
-  color: var(--muted);
-  font-style: italic;
-  padding: 24px 0;
-  text-align: center;
-}
-
-/* ---- Archive section ---- */
-.deferred-archive {
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid var(--warm-gray);
-}
-
-.archive-toggle {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--muted);
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 0;
-  width: 100%;
-  text-align: left;
-  transition: color 0.15s;
-}
-
-.archive-toggle:hover {
-  color: var(--ink);
-}
-
-.archive-chevron {
-  width: 14px;
-  height: 14px;
-  transition: transform 0.2s;
-}
-
-.archive-toggle.open .archive-chevron {
-  transform: rotate(180deg);
-}
-
-.archive-count {
-  font-size: 11px;
-  color: var(--muted);
-  opacity: 0.7;
-}
-
-.archive-body {
-  padding-top: 12px;
-}
-
-.archive-search {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--warm-gray);
+.tab-url-tooltip {
+  position: fixed;
+  z-index: 120;
+  width: max-content;
+  max-width: min(360px, calc(100vw - 16px));
+  box-sizing: border-box;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: 6px;
-  background: var(--card-bg);
-  color: var(--ink);
-  outline: none;
-  transition: border-color 0.2s;
-  margin-bottom: 12px;
-}
-
-.archive-search:focus {
-  border-color: var(--accent-amber);
-}
-
-.archive-search::placeholder {
-  color: var(--muted);
-}
-
-/* Archive items are simpler — just title + domain + date */
-.archive-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(154, 145, 138, 0.08);
-}
-
-.archive-item:last-child {
-  border-bottom: none;
-}
-
-.archive-item-title {
-  font-size: 12px;
-  color: var(--muted);
-  text-decoration: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-  min-width: 0;
-  transition: color 0.15s;
-}
-
-.archive-item-title:hover {
-  color: var(--ink);
-}
-
-.archive-item-date {
+  background: rgba(72, 72, 72, 0.88);
+  box-shadow: 0 4px 14px rgba(24, 24, 24, 0.14);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.94);
+  font-family: var(--ptk-font-sans);
   font-size: 10px;
-  color: var(--muted);
-  opacity: 0.6;
-  flex-shrink: 0;
+  font-weight: 400;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 90ms ease;
+}
+
+.tab-url-tooltip__url {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.tab-url-tooltip__copy-hint {
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.tab-url-tooltip.visible {
+  opacity: 1;
+}
+
+.page-chip.is-other-action-target {
+  transform-origin: 50% 50%;
+  animation: tabout-card-drag-jiggle 159ms ease-in-out infinite alternate !important;
+  will-change: transform;
+  background: var(--ptk-card-action-surface) !important;
+}
+
+.page-chip.is-other-action-delete-target {
+  --chip-action-multiply-surface: var(--ptk-action-delete-surface);
+  box-shadow: var(--ptk-card-shadow-hover) !important;
+}
+
+.page-chip.is-other-action-archive-target {
+  --chip-action-multiply-surface: var(--ptk-action-archive-surface);
+  box-shadow: var(--ptk-card-shadow-hover) !important;
+}
+
+.page-chip.is-loose-prompt-archive-target {
+  --chip-action-multiply-surface: var(--ptk-action-archive-surface);
+  background: var(--ptk-card-action-surface) !important;
+  box-shadow: var(--ptk-card-shadow-hover) !important;
+}
+
+.page-chip.is-loose-prompt-delete-target {
+  --chip-action-multiply-surface: var(--ptk-action-delete-surface);
+  background: var(--ptk-card-action-surface) !important;
+  box-shadow: var(--ptk-card-shadow-hover) !important;
+}
+
+/* The pressed source card is excluded from the bulk action, so its ordinary
+   archive/delete hover tint must not make it look like a target. */
+.page-chip.clickable.is-other-action-source,
+.page-chip.clickable.is-other-action-source:has(.chip-close:hover),
+.page-chip.clickable.is-other-action-source:has(.archive-tab-button:hover) {
+  --chip-action-multiply-surface: transparent;
+  mix-blend-mode: normal;
+  border-color: var(--ptk-card-border) !important;
+  background: var(--ptk-card-surface) !important;
+}
+
+/* Keep every marquee candidate visually identical while its shared action is
+   previewed, including the source chip directly beneath the pointer. */
+.page-chip.clickable.is-marquee-selected.is-marquee-archive-preview,
+.page-chip.clickable.is-marquee-selected.is-marquee-archive-preview:has(.archive-tab-button:hover),
+.page-chip.clickable.is-marquee-selected.is-marquee-archive-preview:has(.restore-tab-button:hover) {
+  --chip-action-multiply-surface: var(--ptk-action-archive-surface);
+  background: var(--ptk-card-action-surface) !important;
+  box-shadow: var(--ptk-card-shadow-hover) !important;
+}
+
+.page-chip.clickable.is-marquee-selected.is-marquee-delete-preview,
+.page-chip.clickable.is-marquee-selected.is-marquee-delete-preview:has(.chip-close:hover) {
+  --chip-action-multiply-surface: var(--ptk-action-delete-surface);
+  background: var(--ptk-card-action-surface) !important;
+  box-shadow: var(--ptk-card-shadow-hover) !important;
+}
+
+/* “Take everything out” affects every tab currently in Pocket. Preview that
+   complete candidate set with one neutral, even treatment before activation. */
+body:has(#restoreArchiveButton:hover:not(:disabled))
+  .archive-tabs .page-chip.clickable {
+  --chip-action-multiply-surface: var(--ptk-action-archive-surface);
+  background: var(--ptk-card-action-surface) !important;
+  box-shadow: var(--ptk-card-shadow-hover) !important;
+}
+
+/* Cleaning Pocket affects every chip in the region. Keep the preview even:
+   nested Captain/domain structure must not change the candidate treatment. */
+body:has(#clearArchiveButton:hover:not(:disabled))
+  .archive-tabs .page-chip.clickable {
+  --chip-action-multiply-surface: var(--ptk-action-delete-surface);
+  background: var(--ptk-card-action-surface) !important;
+  box-shadow: var(--ptk-card-shadow-hover) !important;
+}
+
+body:has(#killArchiveButton:hover:not(:disabled))
+  .archive-tabs .page-chip.clickable:not(.is-dormant-pocket) {
+  --chip-action-multiply-surface: var(--ptk-action-delete-surface);
+  background: var(--ptk-card-action-surface) !important;
+  box-shadow: var(--ptk-card-shadow-hover) !important;
+}
+
+/* Duplicate candidates keep their multiply treatment, but every preview uses
+   the same multiply value as a directly hovered Single Chip. */
+.page-chip.candidate.chip-has-dupes:is(
+  .is-other-action-target,
+  .is-loose-prompt-target,
+  .is-marquee-archive-preview,
+  .is-marquee-delete-preview
+),
+.domain-card:has(.mission-top > .group-card-actions .group-card-action:hover:not(:active))
+  .page-chip.candidate.chip-has-dupes,
+.captain-group-card:has(.captain-subgroup-actions .group-card-action:hover:not(:active))
+  .page-chip.candidate.chip-has-dupes,
+body:has(#restoreArchiveButton:hover:not(:disabled))
+  .archive-tabs .page-chip.candidate.chip-has-dupes,
+body:has(#clearArchiveButton:hover:not(:disabled))
+  .archive-tabs .page-chip.candidate.chip-has-dupes,
+body:has(#killArchiveButton:hover:not(:disabled))
+  .archive-tabs .page-chip.candidate.chip-has-dupes:not(.is-dormant-pocket) {
+  --candidate-multiply-surface: var(--ptk-candidate-surface-hover-fixed);
+}
+
+.active-section:not(.is-rendered) {
+  display: none;
+}
+
+body.ambience-mixer-open .ambience-mixer {
+  width: min(620px, 100%);
+  height: var(--mixer-available-height, calc(100dvh - 180px));
+  grid-template-rows: minmax(220px, 1fr) auto;
+  padding-bottom: 16px;
+  max-height: var(--mixer-available-height, calc(100dvh - 180px));
+  margin: 0 auto 24px;
+  visibility: visible;
+  opacity: 1;
+  overflow: visible;
+  pointer-events: auto;
+  transition:
+    max-height 420ms cubic-bezier(.2, .82, .32, 1),
+    margin 420ms cubic-bezier(.2, .82, .32, 1),
+    opacity 280ms ease-out 90ms,
+    visibility 0s linear 0s;
+}
+
+body.ambience-mixer-open .archive-section {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 180ms cubic-bezier(.2, .82, .32, 1),
+    opacity 180ms ease-in,
+    visibility 0s linear 180ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambience-mixer,
+  body.ambience-mixer-open .ambience-mixer,
+  body.ambience-mixer-open .archive-section {
+    transition-duration: 1ms !important;
+    transition-delay: 0s !important;
+  }
 }

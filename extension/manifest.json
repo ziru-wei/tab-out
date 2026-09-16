@@ -3,9 +3,25 @@
   "name": "Tab Out",
   "version": "1.0.0",
   "description": "Keep tabs on your tabs. New tab page that groups your open tabs by domain and lets you close them with style.",
-  "permissions": ["tabs", "activeTab", "storage"],
+  "permissions": ["tabs", "storage", "tabGroups", "webNavigation", "webRequest", "offscreen", "alarms", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
+  },
   "chrome_url_overrides": { "newtab": "index.html" },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
   "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["contracts.js", "error-semantics.js", "error-detector.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
   "action": {
     "default_title": "Tab Out",
     "default_icon": {

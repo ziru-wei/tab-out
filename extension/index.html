@@ -5,111 +5,97 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tab Out</title>
 
-  <!-- Google Fonts: Newsreader (for headings/numbers) + DM Sans (for body text) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="pocket-coin-hidden pocket-position-left pocket-layout-pending">
+<div class="ambient-rain-layer" id="ambientRainLayer" aria-hidden="true">
+  <canvas id="ambientRainCanvas"></canvas>
+</div>
+<header class="dashboard-top">
+  <p class="daily-quote" id="dailyQuote" hidden></p>
+  <button class="tabout-coin" id="taboutMetalCoin" type="button" aria-label="Pocket hidden; click to show Pocket" aria-pressed="false">
+    <span class="tabout-coin__shadow" aria-hidden="true"></span>
+    <span class="tabout-coin__contact-shadow" aria-hidden="true"></span>
+    <span class="tabout-coin__inner">
+      <span class="tabout-coin__edge" aria-hidden="true"></span>
+      <span class="tabout-coin__edge" aria-hidden="true"></span>
+      <span class="tabout-coin__edge" aria-hidden="true"></span>
+      <span class="tabout-coin__edge" aria-hidden="true"></span>
+      <span class="tabout-coin__edge" aria-hidden="true"></span>
+      <span class="tabout-coin__edge" aria-hidden="true"></span>
+      <span class="tabout-coin__edge" aria-hidden="true"></span>
+      <span class="tabout-coin__face tabout-coin__face--front">
+        <span class="tabout-coin__clip"><canvas id="taboutCoinFront"></canvas></span>
+      </span>
+      <span class="tabout-coin__face tabout-coin__face--back">
+        <span class="tabout-coin__clip"><canvas id="taboutCoinBack"></canvas></span>
+      </span>
+    </span>
+  </button>
+
+  <div class="keyboard-prompts" aria-label="Keyboard shortcuts">
+    <p id="selectionKeyboardPrompt" hidden></p>
+    <p class="candidate-keyboard-prompt" id="candidateKeyboardPrompt" aria-live="polite" hidden></p>
+    <p id="archiveLooseTabsKeyboardPrompt" hidden></p>
+    <p id="undoKeyboardPrompt" hidden></p>
+  </div>
+</header>
+
 <div class="container">
 
-
-
-  <!-- ================================================================
-       HEADER — greeting on the left
-       ================================================================ -->
-  <header>
-    <div class="header-left">
-      <!-- "Good afternoon" — written by getGreeting() in app.js -->
-      <h1 id="greeting"></h1>
-      <!-- "Friday, April 4, 2026" — written by getDateDisplay() in app.js -->
-      <div class="date" id="dateDisplay"></div>
-    </div>
-  </header>
-
-  <!-- ================================================================
-       TAB OUT DUPES BANNER — appears when you have extra Tab Out tabs open
-       Hidden by default; app.js shows it when dupeTabOutCount > 1
-       ================================================================ -->
-  <div class="tab-cleanup-banner" id="tabOutDupeBanner" style="display:none">
-    <div class="tab-cleanup-left">
-      <div class="tab-cleanup-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
-        </svg>
+  <section class="ambience-mixer" data-ambience-mixer aria-label="Ambience mixer">
+    <div class="ambience-mixer__pad" data-ambience-pad>
+      <span class="ambience-mixer__axis ambience-mixer__axis--top">LOUDER</span>
+      <span class="ambience-mixer__axis ambience-mixer__axis--bottom">QUIET</span>
+      <span class="ambience-mixer__axis ambience-mixer__axis--left">DRY</span>
+      <span class="ambience-mixer__axis ambience-mixer__axis--right">ROOMY</span>
+      <div class="ambience-mixer__point" data-track="rain">
+        <div class="ambience-mixer__point-core"></div>
+        <span class="ambience-mixer__point-label">Rain</span>
       </div>
-      <div class="tab-cleanup-text">
-        You have <strong id="tabOutDupeCount"></strong> Tab Out tabs open. Keep just this one?
+      <div class="ambience-mixer__point" data-track="chat">
+        <div class="ambience-mixer__point-core"></div>
+        <span class="ambience-mixer__point-label">Cafe</span>
+      </div>
+      <div class="ambience-mixer__point" data-track="lofi">
+        <div class="ambience-mixer__point-core"></div>
+        <span class="ambience-mixer__point-label">Lofi</span>
       </div>
     </div>
-    <button class="tab-cleanup-btn" data-action="close-tabout-dupes">Close extras</button>
+    <div class="ambience-mixer__values">
+      <div class="ambience-mixer__value" data-readout="rain"><strong>&lt;Rain&gt; /</strong><span></span></div>
+      <div class="ambience-mixer__value" data-readout="chat"><strong>&lt;Cafe&gt; /</strong><span></span></div>
+      <div class="ambience-mixer__value" data-readout="lofi"><strong>&lt;Lofi&gt; /</strong><span></span></div>
+    </div>
+  </section>
+
+  <div class="active-section" id="openTabsSection">
+    <div class="missions" id="openTabsMissions"></div>
   </div>
 
-  <!-- ================================================================
-       MAIN CONTENT AREA — two-column layout
-       Left: open tabs (domain/mission cards)
-       Right: saved for later checklist
-       The right column only renders when it has items (JS controls this)
-       ================================================================ -->
-  <div class="dashboard-columns" id="dashboardColumns">
-
-    <!-- LEFT COLUMN: Open tabs -->
-    <div class="active-section" id="openTabsSection" style="display:none">
-      <div class="section-header">
-        <h2 id="openTabsSectionTitle">Right now</h2>
-        <div class="section-line"></div>
-        <div class="section-count" id="openTabsSectionCount"></div>
-      </div>
-      <div class="missions" id="openTabsMissions"></div>
+  <section class="archive-section" id="archiveSection">
+    <div class="archive-dropzone" id="archiveDropZone">
+      <div class="archive-empty" id="archiveEmpty" hidden></div>
+      <div class="archive-tabs missions" id="archiveTabs"></div>
     </div>
-
-    <!-- RIGHT COLUMN: Saved for Later checklist -->
-    <div class="deferred-column" id="deferredColumn" style="display:none">
-      <div class="section-header">
-        <h2>Saved for later</h2>
-        <div class="section-line"></div>
-        <div class="section-count" id="deferredCount"></div>
-      </div>
-
-      <!-- Active checklist items — injected by renderDeferredList() in app.js -->
-      <div class="deferred-list" id="deferredList"></div>
-
-      <!-- Empty state — shown when no active deferred tabs -->
-      <div class="deferred-empty" id="deferredEmpty" style="display:none">
-        Nothing saved. Living in the moment.
-      </div>
-
-      <!-- Archive section — collapsed by default -->
-      <div class="deferred-archive" id="deferredArchive" style="display:none">
-        <button class="archive-toggle" id="archiveToggle">
-          <svg class="archive-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
-          Archive
-          <span class="archive-count" id="archiveCount"></span>
-        </button>
-        <div class="archive-body" id="archiveBody" style="display:none">
-          <input type="text" class="archive-search" id="archiveSearch" placeholder="Search archived tabs...">
-          <div class="archive-list" id="archiveList"></div>
-        </div>
-      </div>
+    <div class="archive-controls">
+      <button class="action-btn icon-button" id="cyclePocketPositionButton" data-action="cycle-pocket-position" data-pocket-tooltip="Move Pocket" aria-label="Move Pocket">
+        <span class="button-icon icon-layout-freeform" aria-hidden="true"></span>
+      </button>
+      <button class="action-btn icon-button" id="killArchiveButton" data-action="kill-archive-live" data-pocket-tooltip="Kill live Pocket tabs" aria-label="Kill every live tab in Pocket" disabled>
+        <span class="button-icon icon-kill" aria-hidden="true"></span>
+      </button>
+      <button class="action-btn danger icon-button" id="clearArchiveButton" data-action="clear-archive" data-pocket-tooltip="Clean Pocket" aria-label="Delete every tab in Pocket" disabled>
+        <span class="button-icon icon-close" aria-hidden="true"></span>
+      </button>
+      <button class="action-btn icon-button" id="restoreArchiveButton" data-action="restore-archive" data-pocket-tooltip="Take everything out" aria-label="Restore every tab from Pocket" disabled>
+        <span class="button-icon icon-restore" aria-hidden="true"></span>
+      </button>
     </div>
-
-  </div><!-- end .dashboard-columns -->
-
-  <!-- ================================================================
-       FOOTER — global stats + refresh control
-       ================================================================ -->
-  <footer>
-    <div class="footer-stats">
-      <div class="stat">
-        <div class="stat-num" id="statTabs">—</div>
-        <div class="stat-label">Open tabs</div>
-      </div>
-    </div>
-    <div class="last-refresh">
-      <span style="color: var(--muted); font-size: 11px;"><a href="https://github.com/zarazhangrui/tab-out" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">Tab Out</a> by <a href="https://x.com/zarazhangrui" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">Zara</a></span>
-    </div>
-  </footer>
+  </section>
 
 </div><!-- end .container -->
 
@@ -125,11 +111,18 @@
   <span id="toastText"></span>
 </div>
 
-<!-- Personal config (gitignored) — defines LOCAL_LANDING_PAGE_PATTERNS etc. -->
-<!-- If the file doesn't exist, that's fine — app.js uses sensible defaults. -->
-<script src="config.local.js" onerror="/* no personal config, that's fine */"></script>
-
 <!-- Main dashboard logic — loads last so the DOM is ready -->
+<script src="contracts.js"></script>
+<script src="diagnostics.js"></script>
+<script src="ambient-tracks.js"></script>
+<script src="vendor/sparkle-rain.js"></script>
+<script src="ambient-rain.js"></script>
+<script src="ambient-mixer.js"></script>
+<script src="ui-audio.js"></script>
+<script src="metal-coin.js"></script>
+<script src="error-semantics.js"></script>
+<script src="pocket-identity.js"></script>
+<script src="captain-rules.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

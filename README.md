@@ -1,91 +1,57 @@
 # Tab Out
 
-**Keep tabs on your tabs.**
-
-Tab Out is a Chrome extension that replaces your new tab page with a dashboard of everything you have open. Tabs are grouped by domain, with homepages (Gmail, X, LinkedIn, etc.) pulled into their own group. Close tabs with a satisfying swoosh + confetti.
-
-No server. No account. No external API calls. Just a Chrome extension.
-
----
-
-## Install with a coding agent
-
-Send your coding agent (Claude Code, Codex, etc.) this repo and say **"install this"**:
-
-```
-https://github.com/zarazhangrui/tab-out
-```
-
-The agent will walk you through it. Takes about 1 minute.
-
----
+Tab Out is a Chrome Manifest V3 extension that replaces the new-tab page with a dashboard of open tabs. It groups tabs by domain, keeps homepage tabs together, and provides Pocket, Candidate cleanup, Captain workflows, and persistent undo/redo without an application server or account.
 
 ## Features
 
-- **See all your tabs at a glance** on a clean grid, grouped by domain
-- **Homepages group** pulls Gmail inbox, X home, YouTube, LinkedIn, GitHub homepages into one card
-- **Close tabs with style** with swoosh sound + confetti burst
-- **Duplicate detection** flags when you have the same page open twice, with one-click cleanup
-- **Click any tab to jump to it** across windows, no new tab opened
-- **Save for later** bookmark tabs to a checklist before closing them
-- **Localhost grouping** shows port numbers next to each tab so you can tell your vibe coding projects apart
-- **Expandable groups** show the first 8 tabs with a clickable "+N more"
-- **100% local** your data never leaves your machine
-- **Pure Chrome extension** no server, no Node.js, no npm, no setup beyond loading the extension
+- Group and focus tabs across Chrome windows.
+- Move live or dormant items through Pocket, backed by Chrome tab groups and extension storage.
+- Clean duplicate tabs first, then locally recognized error pages.
+- Configure any number of ranked Task Groups, or none, each with an optional Keep/Pending split, color, and icon.
+- Match a Task Group by PDF or by any mix of exact page URLs and whole domains.
+- Reorder Captain and Pocket content by dragging.
+- Restore supported changes with up to 200 browser-session undo/redo entries. Each user operation occupies one entry, even when it affects many tabs.
+- Toggle the optional local café/rain ambience from the Pocket coin. Tap Space five times to open or close its remembered XY mixer.
 
----
+## Install
 
-## Manual Setup
+1. Clone this repository.
+2. Open `chrome://extensions` in Chrome.
+3. Enable **Developer mode**.
+4. Select **Load unpacked** and choose the repository's `extension/` directory.
+5. Open a new tab.
 
-**1. Clone the repo**
+Open the extension's **Options** page to change language, dashboard columns, Pocket behavior, or each Task Group's Keep area, icon, color, and matching rules. You can add, delete, or remove all Task Groups. In a Task Group, a bare host such as `example.com` matches that domain and its subdomains; a full URL such as `https://example.com/project/one` matches only that page. Rules can be separated by commas, spaces, semicolons, or new lines. Task Group icon assets live in `extension/assets/icons/task-groups/`; add an asset there and register its name in `captain-rules.js` and `style.css` to expose another choice.
 
-```bash
-git clone https://github.com/zarazhangrui/tab-out.git
+## Architecture
+
+There is no build step, package manager, or application server. Chrome loads the files in `extension/` directly.
+
+| File | Responsibility |
+| --- | --- |
+| `contracts.js` | Canonical Chrome storage keys, runtime/DOM message contracts, and shared Pocket schema normalization. |
+| `captain-rules.js` | Task Group configuration schemas, page/domain matching, PDF detection, and Keep/Pending schema normalization. |
+| `app.js` | New-tab dashboard controller, renderer, interaction logic, layout preferences, and undo/redo orchestration. It requests Pocket membership and Captain lifecycle writes from the worker. |
+| `background.js` | Service worker and authoritative writer for Pocket membership/live links and Task Group Keep/Pending state; also handles startup restoration, error signals, metadata lookup, badge state, and offscreen audio. |
+| `options.js` | Options form and dynamic PDF/Task Group configuration. |
+| `error-semantics.js`, `error-detector.js` | Shared error-page classification and the top-level content-script observer. |
+| `ambient-rain.js`, `ambient-audio.js`, `metal-coin.js` | Dashboard ambience visuals, singleton offscreen audio, and Pocket coin interaction. |
+
+The dashboard and service worker deliberately share contracts instead of redefining storage schemas or matching rules. Persistent storage key values that predate the Captain terminology remain unchanged so existing installations retain their data.
+
+## Storage and network behavior
+
+Tab-management state stays in Chrome's `storage.local` and `storage.session`; no Tab Out account or application backend is used. The dashboard can contact Google Fonts and Google's favicon service for presentation assets. For recognized papers, the service worker can request titles from Crossref or arXiv. Error detection inspects top-level page titles/headings locally and does not upload page text.
+
+## Development
+
+Edit files under `extension/`, then reload Tab Out from `chrome://extensions`. Lightweight static validation can be run with:
+
+```sh
+find extension -name '*.js' -print0 | xargs -0 -n1 node --check
+node -e "JSON.parse(require('fs').readFileSync('extension/manifest.json', 'utf8'))"
 ```
-
-**2. Load the Chrome extension**
-
-1. Open Chrome and go to `chrome://extensions`
-2. Enable **Developer mode** (top-right toggle)
-3. Click **Load unpacked**
-4. Navigate to the `extension/` folder inside the cloned repo and select it
-
-**3. Open a new tab**
-
-You'll see Tab Out.
-
----
-
-## How it works
-
-```
-You open a new tab
-  -> Tab Out shows your open tabs grouped by domain
-  -> Homepages (Gmail, X, etc.) get their own group at the top
-  -> Click any tab title to jump to it
-  -> Close groups you're done with (swoosh + confetti)
-  -> Save tabs for later before closing them
-```
-
-Everything runs inside the Chrome extension. No external server, no API calls, no data sent anywhere. Saved tabs are stored in `chrome.storage.local`.
-
----
-
-## Tech stack
-
-| What | How |
-|------|-----|
-| Extension | Chrome Manifest V3 |
-| Storage | chrome.storage.local |
-| Sound | Web Audio API (synthesized, no files) |
-| Animations | CSS transitions + JS confetti particles |
-
----
 
 ## License
 
 MIT
-
----
-
-Built by [Zara](https://x.com/zarazhangrui)
