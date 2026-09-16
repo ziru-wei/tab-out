@@ -32,13 +32,6 @@
               <option value="3" data-i18n="threeColumns">Three columns</option>
             </select>
           </label>
-          <label class="field">
-            <span data-i18n="dailyQuotes">Daily quotes</span>
-            <select id="dailyQuotesEnabled">
-              <option value="yes" data-i18n="show">Show</option>
-              <option value="no" data-i18n="hide">Hide</option>
-            </select>
-          </label>
         </div>
       </section>
 
@@ -60,7 +53,6 @@
               <option value="grouped" data-i18n="yes">Yes</option>
               <option value="loose" data-i18n="no">No</option>
             </select>
-            <small class="field-help" data-i18n="pocketGroupingHelp">No shows every Pocket item as a single chip.</small>
           </label>
         </div>
       </section>
@@ -68,10 +60,9 @@
       <section class="option-block captain-option-block">
         <div class="section-heading captain-section-heading">
           <h2 data-i18n="captainSettings">Task groups</h2>
-          <button class="secondary-button add-captain-button" id="addCaptainButton" type="button" data-i18n="addCaptain">Add task group</button>
+          <button class="secondary-button add-captain-button" id="addCaptainButton" type="button" aria-label="Add task group">+</button>
         </div>
         <div class="captains-grid" id="captainsList"></div>
-        <p class="captains-empty" id="captainsEmpty" data-i18n="noCaptains" hidden>No task groups. Add one if you need rule-based grouping.</p>
       </section>
 
       <div class="actions">

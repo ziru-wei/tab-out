@@ -2,9 +2,7 @@
 
 (() => {
   const { MESSAGES, createRuntimeMessage, matchesRuntimeMessage } = globalThis.TabOutContracts;
-  const AMBIENCE_TRACE = '[tab-out ambience trace]';
   function traceAmbience(stage, detail = {}) {
-    console.info(AMBIENCE_TRACE, `offscreen:${stage}`, detail);
     chrome.runtime.sendMessage(createRuntimeMessage(MESSAGES.AMBIENCE_OFFSCREEN_TRACE, {
       stage,
       detail,

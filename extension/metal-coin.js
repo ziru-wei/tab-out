@@ -3,7 +3,7 @@
 (() => {
   const { DOM_EVENTS } = globalThis.TabOutContracts;
   const AMBIENCE_TRACE = '[tab-out ambience trace]';
-  const traceAmbience = (stage, detail = {}) => console.info(AMBIENCE_TRACE, stage, detail);
+  const traceAmbience = () => {};
   const coin = document.getElementById('taboutMetalCoin');
   const frontCanvas = document.getElementById('taboutCoinFront');
   const backCanvas = document.getElementById('taboutCoinBack');

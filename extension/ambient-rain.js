@@ -8,8 +8,7 @@
     createRuntimeMessage,
     matchesRuntimeMessage,
   } = globalThis.TabOutContracts;
-  const TRACE = '[tab-out ambience trace]';
-  const trace = (stage, detail = {}) => console.info(TRACE, stage, detail);
+  const trace = () => {};
   // The persistent audio owner lives in offscreen.html; this page owns only
   // its local Sparkle visual and forwards user intent to the service worker.
   const AMBIENCE_ENABLED = true;

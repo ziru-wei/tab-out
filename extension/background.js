@@ -225,12 +225,7 @@ async function cachedArxivTitle(rawArxivId) {
   return request;
 }
 
-function traceErrorDetect(stage, detail = {}) {
-  console.log(`${ERROR_DETECT_TRACE} ${stage}`, JSON.stringify({
-    timestamp: new Date().toISOString(),
-    ...detail,
-  }));
-}
+function traceErrorDetect() {}
 const tabOutCreatedTabIds = new Set();
 let startupTabOriginTraceUntil = 0;
 let startupTabOriginPhase = 'none';
@@ -262,9 +257,6 @@ function traceCaptainStartup(stage, detail = {}) {
   } catch (error) {
     serialized = JSON.stringify({ serializationError: String(error?.message || error) });
   }
-  // Keep the payload on one printable line so a copied service-worker console
-  // transcript contains the data without requiring objects to be expanded.
-  console.info(`${CAPTAIN_STARTUP_TRACE} ${stage} ${serialized}`);
   persistCaptainStartupTrace(stage, JSON.parse(serialized));
 }
 
@@ -279,12 +271,7 @@ function currentStartupTabOriginContext() {
   };
 }
 
-function traceTabOrigin(stage, detail = {}) {
-  console.info(`${TAB_ORIGIN_TRACE} ${stage}`, {
-    timestamp: Date.now(),
-    ...detail,
-  });
-}
+function traceTabOrigin() {}
 
 function rememberTabOutCreatedTab(tabId) {
   if (!Number.isInteger(tabId)) return;
@@ -357,7 +344,6 @@ function startupTabTrace(tab) {
 }
 
 function traceAmbience(stage, detail = {}) {
-  console.info(AMBIENCE_TRACE, stage, detail);
   chrome.runtime.sendMessage(createRuntimeMessage(TAB_OUT_MESSAGES.AMBIENCE_TRACE, {
     stage: `background:${stage}`,
     detail,
@@ -396,7 +382,7 @@ function pocketItemMetadata(tab) {
     url: typeof tab?.pendingUrl === 'string' && tab.pendingUrl
       ? tab.pendingUrl
       : typeof tab?.url === 'string' ? tab.url : '',
-    title: typeof tab?.title === 'string' ? tab.title : '',
+    title: typeof tab?.title === 'string' ? tab.title.trim() : '',
   };
 }
 
@@ -480,6 +466,7 @@ function mutatePocketState(operation, tabIds = [], itemIds = [], customLabel = '
     const removedTabIds = [];
     const killedTabs = [];
     let removedDuplicateCount = 0;
+    let restoredPocketItemIdentity = '';
     let itemsChanged = identityNormalization.itemsChanged;
     let sessionLinksChanged = identityNormalization.sessionLinksChanged;
 
@@ -535,10 +522,15 @@ function mutatePocketState(operation, tabIds = [], itemIds = [], customLabel = '
         pocketItems.push(item);
         itemsById.set(item.id, item);
         itemsChanged = true;
-      } else if (item.url !== metadata.url || item.title !== metadata.title) {
-        item.url = metadata.url;
-        item.title = metadata.title;
-        itemsChanged = true;
+      } else {
+        if (item.url !== metadata.url) {
+          item.url = metadata.url;
+          itemsChanged = true;
+        }
+        if (metadata.title && item.title !== metadata.title) {
+          item.title = metadata.title;
+          itemsChanged = true;
+        }
       }
       if (item.state !== 'live' || item.tabId !== tabId) {
         item.state = 'live';
@@ -602,6 +594,7 @@ function mutatePocketState(operation, tabIds = [], itemIds = [], customLabel = '
     } else if (operation === 'restore-dormant' || operation === 'replace-dormant') {
       const restoredItem = normalizePocketItems([pocketItem])[0];
       if (!restoredItem) throw new Error('Pocket item snapshot is invalid');
+      restoredPocketItemIdentity = getPocketIdentityUrl(restoredItem.url);
       restoredItem.state = 'dead';
       restoredItem.tabId = null;
       if (operation === 'replace-dormant') {
@@ -718,7 +711,19 @@ function mutatePocketState(operation, tabIds = [], itemIds = [], customLabel = '
     if ((operation === 'kill-items' || operation === 'replace-dormant') && killedTabs.length > 0) {
       await chrome.tabs.remove(killedTabs.map(tab => tab.id));
     }
-    return { pocketTabIds, addedTabIds, removedTabIds, pocketItems, pocketLiveItemIds: liveItemIds, killedTabs, removedDuplicateCount };
+    const restoredPocketItemId = restoredPocketItemIdentity
+      ? pocketItems.find(item => getPocketIdentityUrl(item.url) === restoredPocketItemIdentity)?.id || ''
+      : '';
+    return {
+      pocketTabIds,
+      addedTabIds,
+      removedTabIds,
+      pocketItems,
+      pocketLiveItemIds: liveItemIds,
+      killedTabs,
+      removedDuplicateCount,
+      restoredPocketItemId,
+    };
   };
   const current = pocketStateMutationTail.then(task, task);
   pocketStateMutationTail = current.catch(() => {});
@@ -1200,7 +1205,9 @@ async function runCaptainStartupPrune() {
             captainIndex: reference.captainIndex,
             captainKey: reference.captainKey,
             url: startupTabUrl(tab),
-            title: typeof tab.title === 'string' ? tab.title : '',
+            title: typeof tab.title === 'string' && tab.title.trim()
+              ? tab.title.trim()
+              : reference.title || '',
             ...(typeof reference.customLabel === 'string' && reference.customLabel
               ? { customLabel: reference.customLabel }
               : {}),
@@ -1481,7 +1488,9 @@ function refreshRetainedCaptainTab(tabId) {
         captainIndex,
         captainKey: startupCaptainKey(configs[captainIndex]),
         url: startupTabUrl(tab),
-        title: typeof tab.title === 'string' ? tab.title : '',
+        title: typeof tab.title === 'string' && tab.title.trim()
+          ? tab.title.trim()
+          : manifestTabs[existingIndex].title || '',
         ...(typeof manifestTabs[existingIndex].customLabel === 'string'
           && manifestTabs[existingIndex].customLabel
           ? { customLabel: manifestTabs[existingIndex].customLabel }
@@ -1768,10 +1777,6 @@ async function redirectRecentCaptainDuplicate(tabId, rawUrl) {
     await chrome.tabs.update(keptTab.id, { active: true });
     await chrome.windows.update(keptTab.windowId, { focused: true });
     await chrome.tabs.remove(tabId);
-    console.info('[tab-out captain reuse]', {
-      keptTabId: keptTab.id,
-      closedDuplicateTabId: tabId,
-    });
   } catch (error) {
     console.warn('[tab-out] Could not reuse the matching Captain Keep tab:', error);
   } finally {

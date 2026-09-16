@@ -21,7 +21,7 @@ Tab Out is a Chrome Manifest V3 extension that replaces the new-tab page with a 
 4. Select **Load unpacked** and choose the repository's `extension/` directory.
 5. Open a new tab.
 
-Open the extension's **Options** page to change language, dashboard columns, Pocket behavior, or each Task Group's Keep area, icon, color, and matching rules. You can add, delete, or remove all Task Groups. In a Task Group, a bare host such as `example.com` matches that domain and its subdomains; a full URL such as `https://example.com/project/one` matches only that page. Rules can be separated by commas, spaces, semicolons, or new lines. Task Group icon assets live in `extension/assets/icons/task-groups/`; add an asset there and register its name in `captain-rules.js` and `style.css` to expose another choice.
+Open the extension's **Options** page to change language, dashboard columns, Pocket behavior, or each Task Group's Keep area, icon, color, and matching rules. You can add, delete, or remove all Task Groups. In a Task Group, a bare host such as `example.com` matches that domain and its subdomains; a full URL such as `https://example.com/project/one` matches only that page. Rules can be separated by commas, spaces, semicolons, or new lines. Task Group icon assets live in `extension/assets/icons/task-groups/`; dropping a safely named SVG there automatically adds it to the Options icon list.
 
 ## Architecture
 

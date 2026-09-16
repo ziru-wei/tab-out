@@ -30,7 +30,7 @@ form { display: grid; gap: 18px; }
 .section-heading::after { content: ""; flex: 1; height: 1px; background: rgba(82,82,82,.16); }
 .section-heading h2 { margin: 0; color: #414141; font-size: 14px; font-weight: 620; }
 .general-settings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
-.basic-settings,
+.basic-settings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .pocket-layout-settings { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 #pocketGroupingField.is-hidden { display: none; }
 .captain-section-heading h2 { white-space: nowrap; }
@@ -43,7 +43,6 @@ form { display: grid; gap: 18px; }
 .captain-type-options { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 .captain-details { display: grid; gap: 8px; padding-top: 9px; border-top: 1px solid rgba(82,82,82,.12); }
 .captain-compact-settings { display: grid; grid-template-columns: minmax(max-content, 1.15fr) minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 8px; }
-.captains-empty { margin: 0; padding: 16px; border: 1px dashed rgba(82,82,82,.18); border-radius: 9px; color: #777; font-size: 12px; text-align: center; }
 fieldset { margin: 0; padding: 0; border: 0; display: grid; gap: 8px; }
 legend, .field > span { margin-bottom: 8px; color: #4e4e4e; font-size: 12px; font-weight: 580; }
 
@@ -65,7 +64,6 @@ legend, .field > span { margin-bottom: 8px; color: #4e4e4e; font-size: 12px; fon
 .choice input { accent-color: #5c5c5c; }
 .choice span { display: grid; gap: 3px; }
 .choice strong { font-size: 13px; font-weight: 560; }
-.choice small, .field small { color: #898989; font-size: 11px; line-height: 1.4; }
 .task-options { display: grid; gap: 8px; }
 .task-options[hidden] { display: none; }
 .inline-task-field,
@@ -103,13 +101,6 @@ textarea {
   height: auto;
   padding-block: 9px;
   resize: vertical;
-}
-
-.custom-task-field .field-help {
-  grid-column: 2;
-  color: #777;
-  font-size: 11px;
-  line-height: 1.35;
 }
 
 select {
@@ -150,8 +141,8 @@ button:active { transform: translateY(1px); }
 .delete-captain-button { border-color: rgba(82,82,82,.16); background: rgba(255,255,255,.5); color: #555; }
 .secondary-button:hover,
 .delete-captain-button:hover { background: rgba(255,255,255,.82); }
-.add-captain-button { height: 32px; padding-inline: 11px; white-space: nowrap; }
-.delete-captain-button { height: 27px; padding-inline: 9px; color: #777; font-size: 11px; }
+.add-captain-button { width: 32px; height: 32px; padding: 0; font-size: 18px; line-height: 1; }
+.delete-captain-button { width: 27px; height: 27px; padding: 0; color: #777; font-size: 17px; line-height: 1; }
 
 @media (max-width: 900px) {
   .general-settings { grid-template-columns: repeat(2, minmax(0, 1fr)); }

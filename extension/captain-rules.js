@@ -6,6 +6,12 @@
   ]);
   const TASK_GROUP_ICONS = Object.freeze(['circle', 'book', 'bambu']);
 
+  function normalizeTaskGroupIcon(value, fallback = 'circle') {
+    return typeof value === 'string' && /^[a-z0-9][a-z0-9_-]*$/i.test(value)
+      ? value
+      : fallback;
+  }
+
   const BUILT_IN_PROFILES = Object.freeze({
     'feishu.cn': Object.freeze({
       title: '书',
@@ -22,11 +28,11 @@
       matchRules: Object.freeze(['bambulab.com', 'bambulab.cn', 'bambu.com', 'bambu.cn']),
     }),
     'dl.acm.org': Object.freeze({
-      title: 'ACM Digital Library',
+      title: 'Paper Searching',
       color: 'purple',
       icon: 'book',
-      label: 'ACM Digital Library',
-      matchRules: Object.freeze(['dl.acm.org']),
+      label: 'Paper Searching',
+      matchRules: Object.freeze(['dl.acm.org', 'researchgate.net', 'arxiv.org']),
     }),
   });
 
@@ -128,13 +134,20 @@
     const hasExplicitRules = Array.isArray(explicitRules) || typeof explicitRules === 'string';
     const hasExplicitFamily = Array.isArray(value?.domains) || typeof value?.domains === 'string'
       || typeof value?.domainFamily === 'string';
-    const matchRules = requestedType === 'task'
+    let matchRules = requestedType === 'task'
       ? hasExplicitRules
         ? normalizeTaskRules(explicitRules, value?.domain)
         : hasExplicitFamily
           ? normalizeTaskRules(value.domains ?? value.domainFamily, value?.domain)
           : normalizeTaskRules(legacyDomainFamily(value?.domain))
       : [];
+    const isLegacyAcmProfile = requestedType === 'task'
+      && value?.customTitle === 'ACM Digital Library'
+      && serializeTaskRules(matchRules).length === 1
+      && serializeTaskRules(matchRules)[0] === 'dl.acm.org';
+    if (isLegacyAcmProfile) {
+      matchRules = normalizeTaskRules(BUILT_IN_PROFILES['dl.acm.org'].matchRules);
+    }
     const type = requestedType;
     const domains = matchRules.filter(rule => rule.kind === 'domain').map(rule => rule.value);
     const firstRule = matchRules[0];
@@ -143,8 +156,8 @@
       try { return firstRule?.kind === 'page' ? new URL(firstRule.value).hostname : ''; } catch { return ''; }
     })();
     const allowedColors = new Set(GROUP_COLORS);
-    const allowedIcons = new Set(TASK_GROUP_ICONS);
     const profile = builtInProfileForRules(matchRules);
+    const defaultIcon = requestedType === 'pdf' ? 'book' : profile?.icon || 'circle';
     return {
       enabled,
       type,
@@ -152,12 +165,12 @@
       domains,
       matchRules,
       customTitle: typeof value?.customTitle === 'string'
-        ? value.customTitle.trim().slice(0, 40) : '',
+        ? (isLegacyAcmProfile ? BUILT_IN_PROFILES['dl.acm.org'].title : value.customTitle.trim().slice(0, 40))
+        : '',
       groupColor: allowedColors.has(value?.groupColor)
         ? value.groupColor : (index === 0 ? 'blue' : 'purple'),
       keepAreaEnabled: value?.keepAreaEnabled !== false,
-      icon: allowedIcons.has(value?.icon)
-        ? value.icon : (requestedType === 'pdf' ? 'book' : profile?.icon || 'circle'),
+      icon: normalizeTaskGroupIcon(value?.icon, defaultIcon),
     };
   }
 
@@ -220,7 +233,25 @@
     if (Array.isArray(value)) {
       return value.map((config, index) => normalizeConfig(config, index));
     }
-    return [normalizeConfig(legacyValue, 0)];
+    if (legacyValue && typeof legacyValue === 'object') {
+      return [normalizeConfig(legacyValue, 0)];
+    }
+    const defaults = [
+      { profileKey: 'bambulab.com', title: '拓竹' },
+      { profileKey: 'feishu.cn', title: '飞书' },
+    ];
+    return defaults.map(({ profileKey, title }, index) => {
+      const profile = BUILT_IN_PROFILES[profileKey];
+      return normalizeConfig({
+        enabled: true,
+        type: 'task',
+        matchRules: profile.matchRules,
+        customTitle: title,
+        groupColor: profile.color,
+        keepAreaEnabled: true,
+        icon: profile.icon,
+      }, index);
+    });
   }
 
   function configKey(config) {
@@ -332,6 +363,7 @@
     normalizeConfigs,
     normalizeKeepManifest,
     normalizePendingDeadItems,
+    normalizeTaskGroupIcon,
     normalizeDomain,
     normalizeDomainFamily,
     normalizePageUrl,

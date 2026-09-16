@@ -19,7 +19,9 @@
     };
     history.push(entry);
     if (history.length > MAX_HISTORY) history.shift();
-    console[level](`${PREFIX} ${stage}`, entry);
+    if (level === 'warn' || level === 'error') {
+      console[level](`${PREFIX} ${stage}`, entry);
+    }
     return entry;
   }
 

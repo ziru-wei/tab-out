@@ -35,7 +35,6 @@
     CAPTAIN_TAB_ORDER: 'pdfTabOrder',
     UI_LANGUAGE: 'uiLanguage',
     DASHBOARD_COLUMNS: 'dashboardColumns',
-    DAILY_QUOTES_ENABLED: 'dailyQuotesEnabled',
     DAILY_QUOTE_STATE: 'dailyQuoteState',
     UNDO_HISTORY: 'undoHistory',
     REDO_HISTORY: 'redoHistory',

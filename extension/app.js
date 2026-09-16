@@ -44,7 +44,6 @@ function traceCaptainKeep(stage, detail = {}) {
   } catch (error) {
     serialized = JSON.stringify({ serializationError: String(error?.message || error) });
   }
-  console.info(`${CAPTAIN_KEEP_TRACE} ${stage} ${serialized}`);
   persistCaptainKeepTrace(stage, JSON.parse(serialized));
 }
 
@@ -64,20 +63,11 @@ async function dashboardTabOriginContext() {
   }
 }
 
-function traceTabOrigin(stage, detail = {}) {
-  console.info(`${TAB_ORIGIN_TRACE} ${stage}`, {
-    timestamp: Date.now(),
-    ...detail,
-  });
-}
+function traceTabOrigin() {}
 
-function tracePocketBind(stage, detail = {}) {
-  console.log(`${POCKET_BIND_TRACE} ${stage}`, JSON.stringify(detail));
-}
+function tracePocketBind() {}
 
-function traceDuplicateDelete(stage, detail = {}) {
-  console.log(`${DUPLICATE_DELETE_TRACE} ${stage}`, JSON.stringify(detail));
-}
+function traceDuplicateDelete() {}
 
 let captainKeepDedupTrace = null;
 let captainKeepReviveTrace = null;
@@ -102,15 +92,6 @@ function traceCaptainKeepRevive(stage, detail = {}) {
   if (Number.isInteger(detail.createdTabId)) {
     captainKeepReviveTrace.createdTabId = detail.createdTabId;
   }
-  const trace = captainKeepReviveTrace;
-  console.info(`${CAPTAIN_KEEP_REVIVE_TRACE} ${stage}`, JSON.stringify({
-    timestamp: new Date().toISOString(),
-    operationId: trace?.operationId || null,
-    elapsedMs: trace ? Math.round((performance.now() - trace.startedAt) * 10) / 10 : null,
-    keepId: trace?.keepId || detail.keepId || null,
-    trackedTabId: trace?.createdTabId ?? null,
-    ...detail,
-  }));
 }
 
 function traceCaptainKeepDedup(stage, detail = {}) {
@@ -123,31 +104,15 @@ function traceCaptainKeepDedup(stage, detail = {}) {
       targetTabIds: [],
     };
   }
-  const trace = captainKeepDedupTrace;
-  console.info(`${CAPTAIN_KEEP_DEDUP_TRACE} ${stage}`, JSON.stringify({
-    timestamp: new Date().toISOString(),
-    operationId: trace?.operationId || null,
-    elapsedMs: trace ? Math.round((performance.now() - trace.startedAt) * 10) / 10 : null,
-    ...detail,
-  }));
   if (stage === 'complete' || stage === 'error') captainKeepDedupTrace = null;
 }
 
 let dragDebugStartedAt = null;
 
-function traceDragDebug(stage, detail = {}) {
-  console.log(`${DRAG_DEBUG_TRACE} ${stage}`, JSON.stringify({
-    timestamp: new Date().toISOString(),
-    elapsedMs: Number.isFinite(dragDebugStartedAt)
-      ? Math.round(performance.now() - dragDebugStartedAt)
-      : null,
-    ...detail,
-  }));
-}
+function traceDragDebug() {}
 
 let dailyQuotes = [];
 let dailyQuoteRefreshTimer = null;
-let dailyQuotesEnabled = true;
 let dailyQuoteState = null;
 
 function localCalendarDateKey(date = new Date()) {
@@ -221,7 +186,7 @@ async function renderDailyQuote() {
   const quoteEl = document.getElementById('dailyQuote');
   clearTimeout(dailyQuoteRefreshTimer);
   if (!quoteEl) return;
-  if (!dailyQuotesEnabled || dailyQuotes.length === 0) {
+  if (dailyQuotes.length === 0) {
     quoteEl.hidden = true;
     quoteEl.replaceChildren();
     return;
@@ -265,10 +230,13 @@ async function loadDailyQuotes() {
   try {
     const [response, stored] = await Promise.all([
       fetch(chrome.runtime.getURL('assets/data/daily-quotes.json')),
-      chrome.storage.local.get([DAILY_QUOTES_ENABLED_KEY, DAILY_QUOTE_STATE_KEY]),
+      chrome.storage.local.get([DAILY_QUOTE_STATE_KEY]),
     ]);
-    if (!response.ok) return;
-    dailyQuotesEnabled = stored[DAILY_QUOTES_ENABLED_KEY] !== false;
+    if (!response.ok) {
+      dailyQuotes = [];
+      await renderDailyQuote();
+      return;
+    }
     dailyQuoteState = normalizeDailyQuoteState(stored[DAILY_QUOTE_STATE_KEY]);
     const quotes = await response.json();
     dailyQuotes = Array.isArray(quotes)
@@ -284,6 +252,7 @@ async function loadDailyQuotes() {
     await renderDailyQuote();
   } catch {
     dailyQuotes = [];
+    await renderDailyQuote();
   }
 }
 
@@ -413,7 +382,7 @@ let undoHistory = [];
 let redoHistory = [];
 let isUndoing = false;
 let pocketVisible = false;
-let readLaterEnabled = true;
+let readLaterEnabled = false;
 let captainRetainedTabIds = new Set();
 let captainTabOrder = [];
 let candidateBatchMode = null;
@@ -422,7 +391,7 @@ let detectedErrorTabIds = new Set();
 let candidateHeaderShimmerTimer = null;
 let captainConfigs = [];
 let captainConfig = null;
-let uiLanguage = 'en';
+let uiLanguage = 'zh';
 let dashboardColumnCount = 3;
 let pocketPosition = 'left';
 let pocketGroupLooseTabs = true;
@@ -479,7 +448,6 @@ const CAPTAIN_PENDING_DEAD_ITEMS_KEY = TAB_OUT_STORAGE.CAPTAIN_PENDING_DEAD_ITEM
 const STARTUP_PRUNE_STATE_KEY = TAB_OUT_STORAGE.CAPTAIN_STARTUP_PRUNE_STATE;
 const UI_LANGUAGE_KEY = TAB_OUT_STORAGE.UI_LANGUAGE;
 const DASHBOARD_COLUMNS_KEY = TAB_OUT_STORAGE.DASHBOARD_COLUMNS;
-const DAILY_QUOTES_ENABLED_KEY = TAB_OUT_STORAGE.DAILY_QUOTES_ENABLED;
 const DAILY_QUOTE_STATE_KEY = TAB_OUT_STORAGE.DAILY_QUOTE_STATE;
 const PDF_GROUP_TITLE = 'PDF';
 const CAPTAIN_CONFIG_KEY = TAB_OUT_STORAGE.CAPTAIN_CONFIG_LEGACY;
@@ -498,12 +466,7 @@ function uiText(english, chinese) {
   return uiLanguage === 'zh' ? chinese : english;
 }
 
-function traceErrorDetect(stage, detail = {}) {
-  console.log(`${ERROR_DETECT_TRACE} ${stage}`, JSON.stringify({
-    timestamp: new Date().toISOString(),
-    ...detail,
-  }));
-}
+function traceErrorDetect() {}
 
 function withRuntimeStateTimeout(operation, label) {
   let timeoutId;
@@ -518,9 +481,9 @@ function withRuntimeStateTimeout(operation, label) {
 async function loadUiLanguage() {
   try {
     const stored = await chrome.storage.local.get(UI_LANGUAGE_KEY);
-    uiLanguage = stored[UI_LANGUAGE_KEY] === 'zh' ? 'zh' : 'en';
+    uiLanguage = stored[UI_LANGUAGE_KEY] === 'en' ? 'en' : 'zh';
   } catch {
-    uiLanguage = 'en';
+    uiLanguage = 'zh';
   }
   globalThis.TabOutLanguage = uiLanguage;
   document.documentElement.lang = uiLanguage === 'zh' ? 'zh-CN' : 'en';
@@ -677,7 +640,7 @@ function applyPocketVisibility(visible) {
 
 async function loadReadLaterEnabled() {
   const stored = await chrome.storage.local.get(READ_LATER_ENABLED_KEY);
-  readLaterEnabled = stored[READ_LATER_ENABLED_KEY] !== false;
+  readLaterEnabled = stored[READ_LATER_ENABLED_KEY] === true;
   if (!readLaterEnabled) {
     pocketVisible = false;
     chrome.storage.session.set({ [COIN_POCKET_VISIBLE_KEY]: false }).catch(() => {});
@@ -939,7 +902,7 @@ function adoptExternalTabsIntoDeadCaptainKeep(manifest, liveCaptainTabs, retaine
       state: 'live',
       tabId: tab.id,
       url: captainTabUrl(tab),
-      title: typeof tab.title === 'string' && tab.title ? tab.title : reference.title,
+      title: typeof tab.title === 'string' && tab.title.trim() ? tab.title.trim() : reference.title,
     };
     nextRetainedIds.push(tab.id);
     const precedingLiveIds = nextTabs.slice(0, index)
@@ -984,7 +947,9 @@ function buildCaptainKeepManifest(liveCaptainTabs, retainedIds, sessionToken) {
       captainIndex,
       captainKey: captainConfigKey(captainConfigs[captainIndex]),
       url: captainTabUrl(tab),
-      title: typeof tab.title === 'string' ? tab.title : '',
+      title: typeof tab.title === 'string' && tab.title.trim()
+        ? tab.title.trim()
+        : previous?.title || '',
       ...(normalizeCustomLabel(captainKeepCustomLabelsByTabId.get(tab.id) || previous?.customLabel)
         ? { customLabel: normalizeCustomLabel(captainKeepCustomLabelsByTabId.get(tab.id) || previous?.customLabel) }
         : {}),
@@ -1204,7 +1169,7 @@ function applyLocalCaptainKeepRevival(keepId, tab) {
       ...item,
       state: 'live',
       tabId: tab.id,
-      title: typeof tab.title === 'string' && tab.title ? tab.title : item.title,
+      title: typeof tab.title === 'string' && tab.title.trim() ? tab.title.trim() : item.title,
     } : item),
   };
   captainRetainedTabIds.add(tab.id);
@@ -1255,6 +1220,15 @@ function patchCaptainKeepChip(keepId, state, tab = null) {
   const label = chip.querySelector('[data-chip-label]');
   if (!actions || !label) return false;
 
+  const repairBlankLabel = sourceTab => {
+    if (label.textContent.trim()) return;
+    let hostname = '';
+    try { hostname = new URL(sourceTab?.pendingUrl || sourceTab?.url || '').hostname; } catch {}
+    label.textContent = customLabelForTab(sourceTab)
+      || displayTabTitle(sourceTab, hostname)
+      || uiText('Untitled', '无标题');
+  };
+
   if (state === 'dead') {
     chip.classList.add('is-dead-captain-keep');
     chip.classList.remove('is-delete-pending', 'chip-has-dupes', 'cleanup-item', 'candidate', 'chip-error');
@@ -1269,6 +1243,7 @@ function patchCaptainKeepChip(keepId, state, tab = null) {
     actions.innerHTML = `<button class="chip-action chip-close icon-button" data-action="close-dead-captain-keep" data-captain-keep-id="${escapeHtmlAttribute(keepId)}" aria-label="${uiText('Remove this dead tab from Keep', '从保留区彻底移除此失效标签页')}">${buttonIcon('close')}</button>`;
     const deadTab = deadCaptainKeepTabs().find(item => item.captainKeepId === keepId);
     if (deadTab) {
+      repairBlankLabel(deadTab);
       for (const group of domainGroups) {
         group.tabs = group.tabs.map(item => item.id === previousTabId ? deadTab : item);
       }
@@ -1277,6 +1252,7 @@ function patchCaptainKeepChip(keepId, state, tab = null) {
   }
 
   if (!Number.isInteger(tab?.id)) return false;
+  repairBlankLabel(tab);
   chip.classList.remove('is-dead-captain-keep', 'is-delete-pending');
   chip.dataset.action = 'focus-tab';
   chip.dataset.tabId = String(tab.id);
@@ -2334,11 +2310,21 @@ function pdfFileName(tab) {
 function displayTabTitle(tab, hostname = '') {
   const metadataTitle = cachedPaperTitle(tab) || cachedCitationTitle(tab);
   if (metadataTitle) return metadataTitle;
+  const rawUrl = tab?.pendingUrl || tab?.url || '';
   if (isPdfTab(tab)) {
-    return pdfFileName(tab) || stripTitleNoise(tab.title || '') || tab.url || 'PDF';
+    return pdfFileName(tab) || stripTitleNoise(tab?.title || '') || rawUrl || 'PDF';
   }
 
-  return cleanTitle(smartTitle(stripTitleNoise(tab.title || ''), tab.url), hostname);
+  const cleaned = cleanTitle(smartTitle(stripTitleNoise(tab?.title || ''), rawUrl), hostname).trim();
+  if (cleaned) return cleaned;
+  try {
+    const parsed = new URL(rawUrl);
+    const pathPart = parsed.pathname.split('/').filter(Boolean).at(-1) || '';
+    if (pathPart) return decodeURIComponent(pathPart).trim() || rawUrl;
+    return friendlyDomain(parsed.hostname) || parsed.hostname || rawUrl;
+  } catch {
+    return rawUrl || friendlyDomain(hostname) || hostname || uiText('Untitled', '无标题');
+  }
 }
 
 async function requestPocketStateMutation(
@@ -2381,6 +2367,9 @@ async function requestPocketStateMutation(
       pocketLiveItemIds,
       killedTabs: Array.isArray(response.killedTabs) ? response.killedTabs : [],
       removedDuplicateCount: Number(response.removedDuplicateCount) || 0,
+      restoredPocketItemId: typeof response.restoredPocketItemId === 'string'
+        ? response.restoredPocketItemId
+        : '',
     };
   } catch (error) {
     globalThis.TabOutDiagnostics?.mark('pocket:mutation-error', {
@@ -2767,7 +2756,9 @@ function beginDeletionVisualFeedback(tabIds) {
     // When a whole domain is being deleted, animate its frame once instead of
     // running an overlapping animation on every child chip. Dead Keep/Pending
     // placeholders have no tab id and must keep the Captain frame visible.
-    if (affectedChips.length === allChips.length) {
+    const preservesKeepArea = card.classList.contains('captain-group-card')
+      && captainUsesKeepArea(captainConfigForGroupKey(card.dataset.groupKey));
+    if (affectedChips.length === allChips.length && !preservesKeepArea) {
       card.classList.add('is-delete-pending');
       targets.push(card);
       return;
@@ -2842,6 +2833,9 @@ function celebrateDeletedTabs(closedTabs, origins) {
 function applyClosedTabsToDashboard(closedTabs) {
   const closedIds = new Set(closedTabs.map(tab => tab.id).filter(Number.isInteger));
   if (closedIds.size === 0) return;
+  closedTabs.forEach(tab => {
+    if (isLiveCaptainKeepTab(tab)) patchExternallyClosedCaptainKeepTab(tab.id);
+  });
   openTabs = openTabs.filter(tab => !closedIds.has(tab.id));
   archivedTabIds = new Set([...archivedTabIds].filter(tabId => !closedIds.has(tabId)));
   domainGroups = domainGroups
@@ -2867,29 +2861,71 @@ function applyClosedTabsToDashboard(closedTabs) {
 /** Closes tabs and records enough browser state to recreate them on undo. */
 async function closeTabsWithUndo(
   tabIds,
-  { recordHistory = true, traceDuplicateRemoval = false } = {},
+  { recordHistory = true, traceDuplicateRemoval = false, playSoundAfterExit = false } = {},
 ) {
   beginDashboardRefreshSuppression();
-  const deletionFeedbackTargets = beginDeletionVisualFeedback(tabIds);
+  let deletionFeedbackTargets = [];
+  let deletionUiCommitted = false;
   try {
-    const confettiOrigins = captureDeletionConfettiOrigins(tabIds);
     traceCaptainKeepDedup('tabs-query-begin', { requestedTabIds: normalizeTabIds(tabIds) });
     const tabsBeforeClose = await chrome.tabs.query({});
     traceCaptainKeepDedup('tabs-query-complete', { browserTabCount: tabsBeforeClose.length });
+    const requestedIds = new Set(normalizeTabIds(tabIds));
+    const anticipatedClosedTabs = tabsBeforeClose.filter(tab => requestedIds.has(tab.id));
+    if (anticipatedClosedTabs.length === 0) return [];
+
     const archivedIdsBeforeClose = new Set(archivedTabIds);
     const captainLayoutBefore = captureCaptainLayoutState(tabsBeforeClose);
+    const deletionFeedbackStartedAt = performance.now();
+    deletionFeedbackTargets = beginDeletionVisualFeedback(tabIds);
+    const confettiOrigins = captureDeletionConfettiOrigins(tabIds);
+    const exitAnimation = deletionFeedbackTargets.length > 0
+      ? finishDeletionVisualFeedback(deletionFeedbackStartedAt)
+      : Promise.resolve();
+
     traceCaptainKeepDedup('chrome-remove-begin');
-    const closedTabs = await closeTabsByIds(tabIds, tabsBeforeClose, { traceDuplicateRemoval });
+    const closeOutcome = closeTabsByIds(tabIds, tabsBeforeClose, { traceDuplicateRemoval })
+      .then(closedTabs => ({ closedTabs, error: null }))
+      .catch(error => ({ closedTabs: [], error }));
+    const firstCompleted = await Promise.race([
+      closeOutcome.then(outcome => ({ kind: 'close', outcome })),
+      exitAnimation.then(() => ({ kind: 'animation', outcome: null })),
+    ]);
+
+    let outcome = firstCompleted.outcome;
+    if (firstCompleted.kind === 'close') {
+      if (outcome.error) throw outcome.error;
+      if (outcome.closedTabs.length === 0) {
+        clearDeletionVisualFeedback(deletionFeedbackTargets);
+        return [];
+      }
+      await exitAnimation;
+    } else {
+      // The browser may still be closing the tab. Commit the visual state from
+      // the authoritative pre-close snapshot as soon as the exit animation
+      // ends, instead of leaving an invisible chip in the layout.
+      celebrateDeletedTabs(anticipatedClosedTabs, confettiOrigins);
+      if (playSoundAfterExit) playCloseSound();
+      applyClosedTabsToDashboard(anticipatedClosedTabs);
+      deletionUiCommitted = true;
+      outcome = await closeOutcome;
+      if (outcome.error) throw outcome.error;
+    }
+
+    const closedTabs = outcome.closedTabs;
     traceCaptainKeepDedup('chrome-remove-complete', { closedTabIds: closedTabs.map(tab => tab.id) });
     if (closedTabs.length === 0) {
-      clearDeletionVisualFeedback(deletionFeedbackTargets);
+      if (deletionUiCommitted) await renderDashboard();
+      else clearDeletionVisualFeedback(deletionFeedbackTargets);
       return [];
     }
 
-    celebrateDeletedTabs(closedTabs, confettiOrigins);
-    // Chrome has confirmed the close. Reflow now; persistence and cleanup are
-    // bookkeeping and must not keep a deleted card occupying the dashboard.
-    applyClosedTabsToDashboard(closedTabs);
+    if (!deletionUiCommitted) {
+      celebrateDeletedTabs(closedTabs, confettiOrigins);
+      if (playSoundAfterExit) playCloseSound();
+      applyClosedTabsToDashboard(closedTabs);
+      deletionUiCommitted = true;
+    }
 
     const closedIds = new Set(closedTabs.map(tab => tab.id));
     void withRuntimeStateTimeout(
@@ -2919,7 +2955,13 @@ async function closeTabsWithUndo(
     traceCaptainKeepDedup('history-wait-complete');
     return closedTabs;
   } catch (error) {
-    clearDeletionVisualFeedback(deletionFeedbackTargets);
+    if (deletionUiCommitted) {
+      await renderDashboard().catch(renderError => {
+        console.warn('[tab-out] Could not restore dashboard after a failed tab close:', renderError);
+      });
+    } else {
+      clearDeletionVisualFeedback(deletionFeedbackTargets);
+    }
     throw error;
   } finally {
     endDashboardRefreshSuppression();
@@ -3987,6 +4029,9 @@ function syncKeyboardPromptProgression() {
   const bulkPrompt = document.getElementById('archiveLooseTabsKeyboardPrompt');
   const undoPrompt = document.getElementById('undoKeyboardPrompt');
   const hasMarqueeSelection = Boolean(document.querySelector('.page-chip.is-marquee-selected'));
+  const hasSelectedLivePocketTab = Boolean(document.querySelector(
+    '.mission-card[data-area="archive"] .page-chip.is-marquee-selected[data-tab-id][data-pocket-item-id]',
+  ));
   const hasCandidateBatch = isCandidateBatchActive();
   const hasOpenNonCaptainTabs = domainGroups.some(group =>
     (group.tabs || []).some(tab => !captainKeepAreaEnabledForTab(tab)));
@@ -3998,7 +4043,11 @@ function syncKeyboardPromptProgression() {
     const archiveSelection = readLaterEnabled
       ? keyboardPromptHtml(['Enter'], uiText('put in Pocket', '扔进「口袋」'), uiText('', '按'))
       : '';
-    const deleteSelection = keyboardPromptHtml(['Backspace'], uiText('delete', '删除'), uiText('', '按'));
+    const deleteSelection = keyboardPromptHtml(
+      ['Backspace'],
+      hasSelectedLivePocketTab ? uiText('turn dead', '转为 dead') : uiText('delete', '删除'),
+      uiText('', '按'),
+    );
     selectionPrompt.innerHTML = [archiveSelection, deleteSelection]
       .filter(Boolean)
       .map(item => `<span class="selection-shortcut">${item}</span>`)
@@ -4586,7 +4635,7 @@ function smartTitle(title, url) {
   const titleIsUrl = !title || title === url || title.startsWith(hostname) || title.startsWith('http');
 
   if (isBambuWikiUrl(url)) {
-    return title.replace(/\s*\|\s*Bambu Lab Wiki\s*$/i, '').trim() || title;
+    return title.replace(/\s*\|\s*Bambu Lab Wiki\s*$/i, '').trim() || title || url;
   }
 
   if (isFeishuDocumentUrl(url)) {
@@ -4910,6 +4959,15 @@ function buildPocketGroups(tabs) {
   return applyPocketManualOrder(groups);
 }
 
+function applyTaskGroupIconMasks(container) {
+  container?.querySelectorAll('[data-task-group-icon]').forEach(icon => {
+    const name = captainRules.normalizeTaskGroupIcon(icon.dataset.taskGroupIcon);
+    const url = chrome.runtime.getURL(`assets/icons/task-groups/${name}.svg`);
+    icon.style.webkitMaskImage = `url("${url}")`;
+    icon.style.maskImage = `url("${url}")`;
+  });
+}
+
 function buildPocketDisplayTabs(liveTabs) {
   const liveTabsById = new Map(liveTabs.map(tab => [tab.id, tab]));
   const liveTabIdByItemId = new Map();
@@ -5111,6 +5169,27 @@ async function discardDormantPocketItems(itemIds) {
   return ids.length;
 }
 
+async function discardDormantPocketItemsWithUndo(itemIds) {
+  const wantedIds = new Set((itemIds || [])
+    .filter(itemId => typeof itemId === 'string' && itemId));
+  const snapshots = pocketItems
+    .filter(item => wantedIds.has(item.id) && item.state === 'dead')
+    .map(snapshotPocketItemForHistory)
+    .filter(Boolean);
+  if (snapshots.length === 0) return 0;
+
+  const discardedCount = await discardDormantPocketItems(
+    snapshots.map(item => item.id),
+  );
+  if (discardedCount === 0) return 0;
+  await pushUndoEntry({
+    type: 'pocket-lifecycle',
+    transition: 'remove-dead',
+    items: snapshots,
+  });
+  return discardedCount;
+}
+
 async function killPocketItems(itemIds, { recordHistory = true } = {}) {
   const ids = [...new Set((itemIds || []).filter(itemId => typeof itemId === 'string'))];
   const snapshots = pocketItems.filter(item => ids.includes(item.id) && item.state === 'live');
@@ -5177,8 +5256,17 @@ async function applyPocketLifecycleHistory(entry, reverse) {
     }
     let restored = 0;
     for (const item of items) {
-      await requestPocketStateMutation('restore-dormant', [], [item.id], '', item);
-      restored += 1;
+      const snapshot = snapshotPocketItemForHistory(item);
+      if (!snapshot) continue;
+      const state = await requestPocketStateMutation(
+        'restore-dormant', [], [snapshot.id], '', snapshot,
+      );
+      const snapshotIdentity = getPocketIdentityUrl(snapshot.url);
+      const restoredItem = state.pocketItems.find(candidate =>
+        (state.restoredPocketItemId && candidate.id === state.restoredPocketItemId)
+        || candidate.id === snapshot.id
+        || (snapshotIdentity && getPocketIdentityUrl(candidate.url) === snapshotIdentity));
+      if (restoredItem) restored += 1;
     }
     return restored;
   }
@@ -5242,6 +5330,7 @@ function renderStableOpenGroupLayout(container, groups) {
   delete container.dataset.visibleColumns;
   container.style.removeProperty('--visible-dashboard-columns');
   container.innerHTML = groups.map(group => renderDomainCard(group, 'open')).join('');
+  applyTaskGroupIconMasks(container);
 
   const shellsById = new Map();
   for (const shell of container.querySelectorAll(':scope > .domain-card-shell')) {
@@ -5375,6 +5464,7 @@ function renderArchiveSection(tabs, groups) {
   // by an empty-state sentence inside an otherwise interactive container.
   emptyEl.hidden = true;
   listEl.innerHTML = groups.map(group => renderDomainCard(group, 'archive')).join('');
+  applyTaskGroupIconMasks(listEl);
 }
 
 /* ----------------------------------------------------------------
@@ -5589,7 +5679,8 @@ function renderDomainCard(group, area = 'open') {
   const groupRestoreButton = isArchive
     ? `<button class="group-card-action group-restore-button icon-button" data-action="restore-domain-tabs" data-area="${area}" data-domain-id="${stableId}" aria-label="${uiText('Restore all tabs in this group', '恢复此组全部标签页')}">${buttonIcon('restore')}</button>`
     : '';
-  const groupCloseButton = `<button class="group-card-action group-close-button icon-button" data-action="close-domain-tabs" data-area="${area}" data-domain-id="${stableId}" aria-label="${uiText('Close all tabs in this group', '关闭此组全部标签页')}">${buttonIcon('close')}</button>`;
+  const groupCloseIcon = hasCaptainKeepArea ? 'kill' : 'close';
+  const groupCloseButton = `<button class="group-card-action group-close-button icon-button" data-action="close-domain-tabs" data-area="${area}" data-domain-id="${stableId}" aria-label="${uiText('Close all tabs in this group', '关闭此组全部标签页')}">${buttonIcon(groupCloseIcon)}</button>`;
   const groupControls = `<div class="group-card-actions">
     ${isArchive ? groupRestoreButton : groupArchiveButton}
     ${groupCloseButton}
@@ -5607,8 +5698,8 @@ function renderDomainCard(group, area = 'open') {
   const groupIcon = groupIconName
     ? `<span class="domain-group-icon${customGroupIconClass}" aria-hidden="true"></span>`
     : '<span class="domain-group-icon" aria-hidden="true"></span>';
-  const captainIconName = groupCaptainConfig?.icon || 'circle';
-  const captainIcon = `<span class="captain-group-icon task-group-icon--${captainIconName}" aria-hidden="true"></span>`;
+  const captainIconName = captainRules.normalizeTaskGroupIcon(groupCaptainConfig?.icon);
+  const captainIcon = `<span class="captain-group-icon" data-task-group-icon="${escapeHtmlAttribute(captainIconName)}" aria-hidden="true"></span>`;
   const groupTitle = isCaptainCard
     ? `<span class="captain-group-title">${captainIcon}<span>${escapeHtmlAttribute(groupCaptainTitle)}</span></span>`
     : `<span class="domain-group-title">${groupIcon}<span>${escapeHtmlAttribute(plainGroupTitle)}</span></span>`;
@@ -6146,6 +6237,12 @@ function selectedMarqueeTabIds(selector = '.page-chip.is-marquee-selected[data-t
     .flatMap(tabIdsRepresentedByChip));
 }
 
+function selectedMarqueeLivePocketItemIds() {
+  return [...new Set([...document.querySelectorAll(
+    '.mission-card[data-area="archive"] .page-chip.is-marquee-selected[data-tab-id][data-pocket-item-id]',
+  )].map(chip => chip.dataset.pocketItemId).filter(Boolean))];
+}
+
 function marqueeSelectedTabIdsForChip(sourceChip) {
   if (!sourceChip?.classList.contains('is-marquee-selected')) return [];
   const area = sourceChip.closest('.mission-card')?.dataset.area;
@@ -6336,14 +6433,7 @@ const CHIP_SINGLE_CLICK_DELAY_MS = 360;
 const pendingChipActivations = new Map();
 const suppressedChipActivations = new WeakSet();
 
-function traceTabLabel(stage, chip, detail = {}) {
-  console.info(`[tab-out tab-label] ${stage}`, {
-    tabId: Number.isInteger(Number(chip?.dataset?.tabId))
-      ? Number(chip.dataset.tabId) : null,
-    pocketItemId: chip?.dataset?.pocketItemId || null,
-    ...detail,
-  });
-}
+function traceTabLabel() {}
 
 function cancelPendingChipActivation(chip = null) {
   if (chip) {
@@ -6643,7 +6733,7 @@ document.addEventListener('click', async (e) => {
     if (tabIds.length === 0 && dormantItemIds.length === 0) return;
 
     const closedTabs = await closeTabsWithUndo(tabIds);
-    const discardedDormantCount = await discardDormantPocketItems(dormantItemIds);
+    const discardedDormantCount = await discardDormantPocketItemsWithUndo(dormantItemIds);
     const count = closedTabs.length + discardedDormantCount;
     if (count === 0) return;
 
@@ -6992,11 +7082,8 @@ document.addEventListener('click', async (e) => {
     let closedTabs = [];
 
     if (pocketItemId && !Number.isInteger(tabId)) {
-      const pocketItem = pocketItemById(pocketItemId);
-      await discardDormantPocketItems([pocketItemId]);
-      if (pocketItem) {
-        await pushUndoEntry({ type: 'pocket-lifecycle', transition: 'remove-dead', items: [pocketItem] });
-      }
+      const discardedCount = await discardDormantPocketItemsWithUndo([pocketItemId]);
+      if (discardedCount === 0) return;
       await renderDashboard();
       showToast(uiText('Closed 1 tab', '已关闭 1 个标签页'), 2500, 'destructive');
       return;
@@ -7004,19 +7091,17 @@ document.addEventListener('click', async (e) => {
     if (sourceChip?.classList.contains('is-marquee-selected')
       && selectedTabIds.length > 0) {
       clearMarqueeSelection();
-      closedTabs = await closeTabsWithUndo(selectedTabIds);
+      closedTabs = await closeTabsWithUndo(selectedTabIds, { playSoundAfterExit: true });
     }
     else if (Number.isInteger(tabId)) {
-      closedTabs = await closeTabsWithUndo([tabId]);
+      closedTabs = await closeTabsWithUndo([tabId], { playSoundAfterExit: true });
     }
     else if (tabUrl) {
       const allTabs = await chrome.tabs.query({});
       const match = allTabs.find(t => t.url === tabUrl);
-      if (match) closedTabs = await closeTabsWithUndo([match.id]);
+      if (match) closedTabs = await closeTabsWithUndo([match.id], { playSoundAfterExit: true });
     } else return;
     if (closedTabs.length === 0) return;
-
-    playCloseSound();
 
     scheduleDashboardRefresh();
     showToast(uiText(
@@ -7035,7 +7120,9 @@ document.addEventListener('click', async (e) => {
 
     const tabIds = livePocketTabIds(group.tabs);
     const closedTabs = await closeTabsWithUndo(tabIds);
-    const discardedDormantCount = await discardDormantPocketItems(dormantPocketItemIds(group.tabs));
+    const discardedDormantCount = await discardDormantPocketItemsWithUndo(
+      dormantPocketItemIds(group.tabs),
+    );
     const count = closedTabs.length + discardedDormantCount;
     if (count === 0) return;
 
@@ -7261,6 +7348,7 @@ document.addEventListener('keydown', async (e) => {
     return;
   }
   const selectedTabIds = selectedMarqueeTabIds();
+  const selectedPocketItemIds = selectedMarqueeLivePocketItemIds();
 
   const isPlainEnter = e.key === 'Enter'
     && !e.ctrlKey
@@ -7299,6 +7387,18 @@ document.addEventListener('keydown', async (e) => {
     e.preventDefault();
     if (selectedTabIds.length === 0) {
       await runKeyboardAction('delete-loose-tabs', deleteAllOpenLooseTabs);
+      return;
+    }
+    if (selectedPocketItemIds.length > 0) {
+      await runKeyboardAction('kill-selected-pocket-tabs', async () => {
+        const count = await killPocketItems(selectedPocketItemIds);
+        clearMarqueeSelection();
+        if (count === 0) return;
+        showToast(uiText(
+          `Closed ${count} selected Pocket tab${count === 1 ? '' : 's'} and kept ${count === 1 ? 'it' : 'them'} in Pocket`,
+          `已关闭选中的 ${count} 个「口袋」标签页并保留其 dead 状态`,
+        ), 2500, 'destructive');
+      });
       return;
     }
     await runKeyboardAction('delete-selected-tabs', async () => {
@@ -8825,11 +8925,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === 'local'
-    && Object.prototype.hasOwnProperty.call(changes, DAILY_QUOTES_ENABLED_KEY)) {
-    dailyQuotesEnabled = changes[DAILY_QUOTES_ENABLED_KEY].newValue !== false;
-    renderDailyQuote().catch(() => {});
-  }
   if (areaName === 'session'
     && Object.prototype.hasOwnProperty.call(changes, CAPTAIN_PENDING_DEAD_ITEMS_KEY)) {
     captainPendingDeadItems = normalizeCaptainPendingDeadItems(

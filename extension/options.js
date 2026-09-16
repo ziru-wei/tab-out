@@ -5,40 +5,38 @@ const CAPTAIN_CONFIG_KEY = TAB_OUT_STORAGE.CAPTAIN_CONFIG_LEGACY;
 const CAPTAIN_CONFIGS_KEY = TAB_OUT_STORAGE.CAPTAIN_CONFIGS;
 const UI_LANGUAGE_KEY = TAB_OUT_STORAGE.UI_LANGUAGE;
 const DASHBOARD_COLUMNS_KEY = TAB_OUT_STORAGE.DASHBOARD_COLUMNS;
-const DAILY_QUOTES_ENABLED_KEY = TAB_OUT_STORAGE.DAILY_QUOTES_ENABLED;
 const READ_LATER_ENABLED_KEY = TAB_OUT_STORAGE.POCKET_ENABLED;
 const POCKET_GROUP_LOOSE_TABS_KEY = TAB_OUT_STORAGE.POCKET_GROUP_LOOSE_TABS;
 const captainRules = globalThis.TabOutCaptainRules;
 const BUILT_IN_CAPTAIN_PROFILES = captainRules.BUILT_IN_PROFILES;
+let taskGroupIcons = [...captainRules.TASK_GROUP_ICONS];
 
 const form = document.getElementById('captainForm');
 const languageInput = document.getElementById('uiLanguage');
 const columnsInput = document.getElementById('dashboardColumns');
-const dailyQuotesEnabledInput = document.getElementById('dailyQuotesEnabled');
 const readLaterEnabledInput = document.getElementById('readLaterEnabled');
 const pocketGroupingInput = document.getElementById('pocketGroupLooseTabs');
 const pocketGroupingField = document.getElementById('pocketGroupingField');
 const captainsList = document.getElementById('captainsList');
-const captainsEmpty = document.getElementById('captainsEmpty');
 const addCaptainButton = document.getElementById('addCaptainButton');
 const status = document.getElementById('saveStatus');
-let uiLanguage = 'en';
+let uiLanguage = 'zh';
 
 const COPY = {
   en: {
     heading: 'Tab Out Settings', basicSettings: 'Basics', captainSettings: 'Task groups',
-    language: 'Language', columns: 'Dashboard columns', twoColumns: 'Two columns', threeColumns: 'Three columns', dailyQuotes: 'Daily quotes', show: 'Show', hide: 'Hide', readLaterSection: 'Pocket', readLaterQuestion: 'Do you need a Pocket?', pocketGrouping: 'Pocket grouping', pocketGroupingHelp: 'No shows every Pocket item as a single chip.', yes: 'Yes', no: 'No', captainNumber: 'Task group {number}', addCaptain: 'Add task group', deleteCaptain: 'Delete', noCaptains: 'No task groups. Add one if you need rule-based grouping.', pdfHelp: 'Match PDF tabs.', taskGroup: 'Task Group',
-    profile: 'Profile', chooseProfile: 'Choose a profile', customTaskGroup: 'Custom Task Group', matchRules: 'Websites and domains', matchRulesHelp: 'Use a bare domain for the whole site or a full URL for one exact page. Separate entries with commas, spaces, semicolons, or new lines.', groupName: 'Alias',
-    keepAreaQuestion: 'Keep area needed?', keepAreaHelp: 'Split this group into Keep and Pending.', groupIcon: 'Icon', circleIcon: 'Circle', bookIcon: 'Book', bambuIcon: 'Bambu',
-    groupColor: 'Color', grey: 'Grey', blue: 'Blue', red: 'Red', yellow: 'Yellow', green: 'Green', pink: 'Pink', purple: 'Purple', cyan: 'Cyan', orange: 'Orange',
+    language: 'Language', columns: 'Dashboard columns', twoColumns: 'Two columns', threeColumns: 'Three columns', readLaterSection: 'Pocket', readLaterQuestion: 'Do you need a Pocket?', pocketGrouping: 'Pocket grouping', yes: 'Yes', no: 'No', captainNumber: 'Task group {number}', addCaptain: 'Add task group', deleteCaptain: 'Delete task group', confirmDeleteCaptain: 'Delete “{name}”?', taskGroup: 'Task Group',
+    profile: 'Profile', chooseProfile: 'Choose a profile', customTaskGroup: 'Custom Task Group', matchRules: 'Websites and domains', groupName: 'Alias',
+    keepAreaQuestion: 'Keep area?', keepAreaHelp: 'Split this group into Keep and Pending.', groupIcon: ' ',
+    groupColor: ' ', grey: 'Grey', blue: 'Blue', red: 'Red', yellow: 'Yellow', green: 'Green', pink: 'Pink', purple: 'Purple', cyan: 'Cyan', orange: 'Orange',
     save: 'Save settings', invalidTaskGroup: 'Enter at least one valid website or domain for each Task Group.', overlap: 'Task groups cannot use the same or overlapping match rules.', duplicateName: 'Task group aliases must be different.', updated: 'Task groups updated.', saved: 'Saved.', loadError: 'Could not load settings.',
   },
   zh: {
     heading: 'Tab Out 设置', basicSettings: '基础设置', captainSettings: '任务组',
-    language: '语言', columns: 'Dashboard 列数', twoColumns: '两列', threeColumns: '三列', dailyQuotes: '每日引言', show: '显示', hide: '隐藏', readLaterSection: '「口袋」', readLaterQuestion: '是否需要「口袋」？', pocketGrouping: '「口袋」的分组', pocketGroupingHelp: '选择“不需要”时，每个口袋标签显示为单独的 chip。', yes: '需要', no: '不需要', captainNumber: '任务组 {number}', addCaptain: '添加任务组', deleteCaptain: '删除', noCaptains: '当前没有任务组。如需按规则分组，可添加一个。', pdfHelp: '匹配 PDF 标签页。', taskGroup: '任务组',
-    profile: 'Profile', chooseProfile: '选择 Profile', customTaskGroup: '自定义任务组', matchRules: '网页和域名', matchRulesHelp: '裸域名匹配整个站点，完整 URL 只匹配单个页面。使用逗号、空格、分号或换行分隔。', groupName: '别名',
-    keepAreaQuestion: '需要保留区？', keepAreaHelp: '将此组分成保留区和待处理区。', groupIcon: '图标', circleIcon: '圆形', bookIcon: '书本', bambuIcon: '竹子',
-    groupColor: '颜色', grey: '灰色', blue: '蓝色', red: '红色', yellow: '黄色', green: '绿色', pink: '粉色', purple: '紫色', cyan: '青色', orange: '橙色',
+    language: '语言', columns: 'Dashboard 列数', twoColumns: '两列', threeColumns: '三列', readLaterSection: '「口袋」', readLaterQuestion: '是否需要「口袋」？', pocketGrouping: '「口袋」的分组', yes: '需要', no: '不需要', captainNumber: '任务组 {number}', addCaptain: '添加任务组', deleteCaptain: '删除任务组', confirmDeleteCaptain: '确认删除“{name}”？', taskGroup: '任务组',
+    profile: 'Profile', chooseProfile: '选择 Profile', customTaskGroup: '自定义任务组', matchRules: '网页和域名', groupName: '别名',
+    keepAreaQuestion: '需要保留区？', keepAreaHelp: '将此组分成保留区和待处理区。', groupIcon: '图',
+    groupColor: '色', grey: '灰色', blue: '蓝色', red: '红色', yellow: '黄色', green: '绿色', pink: '粉色', purple: '紫色', cyan: '青色', orange: '橙色',
     save: '保存设置', invalidTaskGroup: '请为每个任务组输入至少一个有效网页或域名。', overlap: '任务组不能使用相同或互相覆盖的匹配规则。', duplicateName: '任务组别名必须不同。', updated: '任务组已更新。', saved: '已保存。', loadError: '无法加载设置。',
   },
 };
@@ -48,16 +46,19 @@ function optionText(key, values = {}) {
 }
 
 function captainCardHtml(index) {
+  const iconOptions = taskGroupIcons
+    .map(icon => `<option value="${icon}">${icon}</option>`)
+    .join('');
   return `
     <section class="captain-settings" data-captain-index="${index}">
       <div class="captain-heading">
         <h3 data-captain-title>${optionText('captainNumber', { number: index + 1 })}</h3>
-        <button class="delete-captain-button" type="button" data-action="delete-captain">${optionText('deleteCaptain')}</button>
+        <button class="delete-captain-button" type="button" data-action="delete-captain" aria-label="${optionText('deleteCaptain')}">-</button>
       </div>
       <fieldset class="captain-type-options">
         <label class="choice type-choice">
           <input type="radio" name="captainType${index}" value="pdf" checked>
-          <span><strong>PDF</strong><small>${optionText('pdfHelp')}</small></span>
+          <span><strong>PDF</strong></span>
         </label>
         <label class="choice type-choice">
           <input type="radio" name="captainType${index}" value="task">
@@ -72,18 +73,17 @@ function captainCardHtml(index) {
               <option value="">${optionText('chooseProfile')}</option>
               <option value="feishu.cn">Feishu / 飞书</option>
               <option value="bambulab.com">Bambu Lab / 拓竹</option>
-              <option value="dl.acm.org">ACM Digital Library</option>
+              <option value="dl.acm.org">Paper Searching</option>
               <option value="custom">${optionText('customTaskGroup')}</option>
             </select>
           </label>
           <label class="field inline-task-field custom-task-field">
             <span>${optionText('matchRules')}</span>
-            <textarea data-field="rules" rows="3" placeholder="example.com&#10;https://another.example/specific-page" autocomplete="off"></textarea>
-            <small class="field-help">${optionText('matchRulesHelp')}</small>
+            <textarea data-field="rules" rows="3" autocomplete="off"></textarea>
           </label>
           <label class="field inline-task-field">
             <span>${optionText('groupName')}</span>
-            <input data-field="title" type="text" maxlength="40" placeholder="${uiLanguage === 'zh' ? '默认使用第一个匹配项' : 'Uses the first match by default'}">
+            <input data-field="title" type="text" maxlength="40">
           </label>
         </div>
         <div class="captain-compact-settings">
@@ -94,9 +94,7 @@ function captainCardHtml(index) {
           <label class="field compact-select-field">
             <span>${optionText('groupIcon')}</span>
             <select data-field="icon">
-              <option value="circle">${optionText('circleIcon')}</option>
-              <option value="book">${optionText('bookIcon')}</option>
-              <option value="bambu">${optionText('bambuIcon')}</option>
+              ${iconOptions}
             </select>
           </label>
           <label class="field compact-select-field">
@@ -108,6 +106,51 @@ function captainCardHtml(index) {
         </div>
       </div>
     </section>`;
+}
+
+function directoryEntries(reader) {
+  return new Promise((resolve, reject) => {
+    const entries = [];
+    const readBatch = () => reader.readEntries(batch => {
+      if (batch.length === 0) {
+        resolve(entries);
+        return;
+      }
+      entries.push(...batch);
+      readBatch();
+    }, reject);
+    readBatch();
+  });
+}
+
+function packageRootEntry() {
+  return new Promise((resolve, reject) => {
+    if (typeof chrome.runtime.getPackageDirectoryEntry !== 'function') {
+      reject(new Error('Package directory enumeration is unavailable'));
+      return;
+    }
+    chrome.runtime.getPackageDirectoryEntry(resolve);
+  });
+}
+
+function childDirectory(parent, path) {
+  return new Promise((resolve, reject) => parent.getDirectory(path, {}, resolve, reject));
+}
+
+async function loadTaskGroupIcons() {
+  try {
+    const root = await packageRootEntry();
+    const directory = await childDirectory(root, 'assets/icons/task-groups');
+    const entries = await directoryEntries(directory.createReader());
+    const discovered = entries
+      .filter(entry => entry.isFile && /\.svg$/i.test(entry.name))
+      .map(entry => entry.name.replace(/\.svg$/i, ''))
+      .filter(name => /^[a-z0-9][a-z0-9_-]*$/i.test(name))
+      .sort((a, b) => a.localeCompare(b));
+    if (discovered.length > 0) taskGroupIcons = discovered;
+  } catch (error) {
+    console.warn('[tab-out] Could not enumerate Task Group icons:', error);
+  }
 }
 
 function captainCards() {
@@ -200,12 +243,12 @@ function renderCaptains(configs) {
   const activeConfigs = configs.filter(config => config.enabled !== false);
   captainsList.innerHTML = activeConfigs.map((_, index) => captainCardHtml(index)).join('');
   captainCards().forEach((card, index) => populateConfig(card, normalizeConfig(activeConfigs[index], index)));
-  captainsEmpty.hidden = activeConfigs.length > 0;
 }
 
 function applyLanguage() {
   document.documentElement.lang = uiLanguage === 'zh' ? 'zh-CN' : 'en';
   document.title = uiLanguage === 'zh' ? 'Tab Out 设置' : 'Tab Out Settings';
+  addCaptainButton.setAttribute('aria-label', optionText('addCaptain'));
   document.querySelectorAll('[data-i18n]').forEach(element => { element.textContent = optionText(element.dataset.i18n); });
   renderCaptains(readConfigs());
 }
@@ -217,12 +260,11 @@ function syncReadLaterFields() {
 }
 
 async function loadOptions() {
-  const stored = await chrome.storage.local.get([CAPTAIN_CONFIGS_KEY, CAPTAIN_CONFIG_KEY, UI_LANGUAGE_KEY, DASHBOARD_COLUMNS_KEY, DAILY_QUOTES_ENABLED_KEY, READ_LATER_ENABLED_KEY, POCKET_GROUP_LOOSE_TABS_KEY]);
-  uiLanguage = stored[UI_LANGUAGE_KEY] === 'zh' ? 'zh' : 'en';
+  const stored = await chrome.storage.local.get([CAPTAIN_CONFIGS_KEY, CAPTAIN_CONFIG_KEY, UI_LANGUAGE_KEY, DASHBOARD_COLUMNS_KEY, READ_LATER_ENABLED_KEY, POCKET_GROUP_LOOSE_TABS_KEY]);
+  uiLanguage = stored[UI_LANGUAGE_KEY] === 'en' ? 'en' : 'zh';
   languageInput.value = uiLanguage;
   columnsInput.value = stored[DASHBOARD_COLUMNS_KEY] === 2 ? '2' : '3';
-  dailyQuotesEnabledInput.value = stored[DAILY_QUOTES_ENABLED_KEY] === false ? 'no' : 'yes';
-  readLaterEnabledInput.value = stored[READ_LATER_ENABLED_KEY] === false ? 'no' : 'yes';
+  readLaterEnabledInput.value = stored[READ_LATER_ENABLED_KEY] === true ? 'yes' : 'no';
   pocketGroupingInput.value = stored[POCKET_GROUP_LOOSE_TABS_KEY] === false ? 'loose' : 'grouped';
   renderCaptains(normalizeConfigs(stored[CAPTAIN_CONFIGS_KEY], stored[CAPTAIN_CONFIG_KEY]));
   applyLanguage();
@@ -263,8 +305,14 @@ captainsList.addEventListener('click', event => {
   const deleteButton = event.target.closest('[data-action="delete-captain"]');
   if (!deleteButton) return;
   const card = deleteButton.closest('.captain-settings');
+  const cardIndex = captainCards().indexOf(card);
+  if (!card || cardIndex < 0) return;
   const next = readConfigs();
-  next.splice(captainCards().indexOf(card), 1);
+  const config = next[cardIndex];
+  const name = effectiveTitle(config)
+    || optionText('captainNumber', { number: cardIndex + 1 });
+  if (!window.confirm(optionText('confirmDeleteCaptain', { name }))) return;
+  next.splice(cardIndex, 1);
   renderCaptains(next);
   status.textContent = '';
 });
@@ -319,7 +367,6 @@ form.addEventListener('submit', async event => {
   await chrome.storage.local.set({
     [CAPTAIN_CONFIGS_KEY]: next,
     [DASHBOARD_COLUMNS_KEY]: columnsInput.value === '2' ? 2 : 3,
-    [DAILY_QUOTES_ENABLED_KEY]: dailyQuotesEnabledInput.value !== 'no',
     [READ_LATER_ENABLED_KEY]: readLaterEnabledInput.value !== 'no',
     [POCKET_GROUP_LOOSE_TABS_KEY]: pocketGroupingInput.value !== 'loose',
   });
@@ -327,4 +374,6 @@ form.addEventListener('submit', async event => {
   status.textContent = changed ? optionText('updated') : optionText('saved');
 });
 
-loadOptions().catch(() => { status.textContent = optionText('loadError'); });
+loadTaskGroupIcons()
+  .then(loadOptions)
+  .catch(() => { status.textContent = optionText('loadError'); });

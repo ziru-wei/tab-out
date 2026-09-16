@@ -1559,16 +1559,6 @@ body.pocket-position-right #restoreArchiveButton .icon-restore {
   mask: url('assets/icons/task-groups/circle.svg') center / contain no-repeat;
 }
 
-.task-group-icon--book {
-  -webkit-mask-image: url('assets/icons/task-groups/book.svg');
-  mask-image: url('assets/icons/task-groups/book.svg');
-}
-
-.task-group-icon--bambu {
-  -webkit-mask-image: url('assets/icons/task-groups/bambu.svg');
-  mask-image: url('assets/icons/task-groups/bambu.svg');
-}
-
 .domain-group-icon {
   width: 14px;
   height: 14px;
