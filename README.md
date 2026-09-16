@@ -7,6 +7,9 @@ Tab Out is a Chrome Manifest V3 extension that replaces the new-tab page with a 
 Optimized for academic paper searching and reading.
 
 
+I made this for personal everyday use and for my friend's use. So the default language, config, and the preset captain group profile is adapted to her need for the convenience :). You may need to open the extension's **Options** page to configure your version. You may also be able to find some secrete hidden features that I won't disclose here. Enjoy.
+
+
 ## Install
 
 1. Clone this repository.
@@ -15,7 +18,6 @@ Optimized for academic paper searching and reading.
 4. Select **Load unpacked** and choose the repository's `extension/` directory.
 5. Open a new tab.
 
-Open the extension's **Options** page to configure.
 
 ## Storage and network behavior
 
