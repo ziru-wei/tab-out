@@ -502,8 +502,8 @@ async function loadUiLanguage() {
   clearPocketButton?.setAttribute('aria-label', uiText('Delete every tab in Pocket', '清空「口袋」'));
   clearPocketButton?.setAttribute('data-pocket-tooltip', uiText('Clean Pocket', '清空「口袋」'));
   const killPocketButton = document.getElementById('killArchiveButton');
-  killPocketButton?.setAttribute('aria-label', uiText('Kill every live tab in Pocket', '关闭「口袋」中所有 live 标签页'));
-  killPocketButton?.setAttribute('data-pocket-tooltip', uiText('Kill live Pocket tabs', '关闭所有 live 标签页'));
+  killPocketButton?.setAttribute('aria-label', uiText('Kill every live tab in Pocket', '暂时关闭「口袋」中所有 打开的'));
+  killPocketButton?.setAttribute('data-pocket-tooltip', uiText('Kill live Pocket tabs', '暂时关闭了打开的'));
   const restorePocketButton = document.getElementById('restoreArchiveButton');
   restorePocketButton?.setAttribute('aria-label', uiText('Restore every tab from Pocket', '掏光「口袋」'));
   restorePocketButton?.setAttribute('data-pocket-tooltip', uiText('Take everything out', '掏光「口袋」'));
@@ -1240,7 +1240,7 @@ function patchCaptainKeepChip(keepId, state, tab = null) {
     label.classList.add('tab-drag-handle');
     chip.closest('.page-chip-wrapper')?.classList.remove('has-duplicate-stack');
     chip.querySelector('.chip-dupe-indicator')?.remove();
-    actions.innerHTML = `<button class="chip-action chip-close icon-button" data-action="close-dead-captain-keep" data-captain-keep-id="${escapeHtmlAttribute(keepId)}" aria-label="${uiText('Remove this dead tab from Keep', '从保留区彻底移除此失效标签页')}">${buttonIcon('close')}</button>`;
+    actions.innerHTML = `<button class="chip-action chip-close icon-button" data-action="close-dead-captain-keep" data-captain-keep-id="${escapeHtmlAttribute(keepId)}" aria-label="${uiText('Remove this dead tab from Keep', '从「柜子」上彻底移除')}">${buttonIcon('close')}</button>`;
     const deadTab = deadCaptainKeepTabs().find(item => item.captainKeepId === keepId);
     if (deadTab) {
       repairBlankLabel(deadTab);
@@ -3440,7 +3440,7 @@ async function undoLatestAction() {
             ? count > 0 ? 'Restored the dead Keep tab' : 'The Pending item is no longer available'
           : 'No matching action remains to undo';
     const chineseMessage = entry.type === 'closed-tabs'
-      ? count > 0 ? `已重新打开 ${count} 个` : '没有可重新打开的标签页'
+      ? count > 0 ? `已重新打开 ${count} 个` : '没有可重新打开的'
       : entry.type === 'archive-membership'
         ? count > 0 ? `已撤回` : '没有可撤回的匹配标签页'
         : entry.type === 'dedupe-pocket'
@@ -3634,11 +3634,11 @@ async function redoLatestAction() {
       : entry.type === 'captain-layout'
       ? count > 0 ? '已重新应用「常用界面」排列' : '「常用界面」排列没有变化'
       : entry.type === 'tab-label'
-      ? count > 0 ? '已重新应用标签名称' : '该标签页已不可用'
+      ? count > 0 ? '已重新应用名称' : '该标签页已不可用'
       : entry.type === 'captain-keep-lifecycle'
-      ? count > 0 ? '已重新应用保留状态' : '该保留项已不可用'
+      ? count > 0 ? '已重新应用收纳状态' : '该保留项已不可用'
       : entry.type === 'pocket-lifecycle'
-      ? count > 0 ? '已重新应用「口袋」状态' : '该「口袋」项目已不可用'
+      ? count > 0 ? '已重新应用收纳状态' : '该「口袋」项目已不可用'
       : count > 0 ? `已重做 ${count} 个标签页操作` : '没有可重做的匹配标签页';
     showToast(uiText(englishMessage, chineseMessage), 2500, entry.type === 'closed-tabs' && count > 0 ? 'destructive' : 'neutral');
   } catch (err) {
@@ -4045,7 +4045,7 @@ function syncKeyboardPromptProgression() {
       : '';
     const deleteSelection = keyboardPromptHtml(
       ['Backspace'],
-      hasSelectedLivePocketTab ? uiText('turn dead', '转为 dead') : uiText('delete', '删除'),
+      hasSelectedLivePocketTab ? uiText('turn dead', '暂时关闭') : uiText('delete', '删除'),
       uiText('', '按'),
     );
     selectionPrompt.innerHTML = [archiveSelection, deleteSelection]
@@ -5087,8 +5087,8 @@ function patchPocketItemChip(itemId, state, tab = null) {
     chip.dataset.dragPocketItemId = itemId;
     chip.closest('.page-chip-wrapper')?.classList.remove('has-duplicate-stack');
     chip.querySelector('.chip-dupe-indicator')?.remove();
-    actions.innerHTML = `<button class="restore-tab-button icon-button" data-action="restore-tab"${itemAttribute} aria-label="${uiText('Restore to open tabs', '恢复到打开的标签页')}">${buttonIcon('restore')}</button>
-      <button class="chip-action chip-close icon-button" data-action="close-single-tab"${itemAttribute} data-tab-url="${escapeHtmlAttribute(item.url)}" aria-label="${uiText('Remove this dead tab from Pocket', '从「口袋」彻底移除此 dead 标签页')}">${buttonIcon('close')}</button>`;
+    actions.innerHTML = `<button class="restore-tab-button icon-button" data-action="restore-tab"${itemAttribute} aria-label="${uiText('Restore to open tabs', '恢复到打开的')}">${buttonIcon('restore')}</button>
+      <button class="chip-action chip-close icon-button" data-action="close-single-tab"${itemAttribute} data-tab-url="${escapeHtmlAttribute(item.url)}" aria-label="${uiText('Remove this dead tab from Pocket', '从「口袋」彻底移除')}">${buttonIcon('close')}</button>`;
     for (const group of archivedDomainGroups) {
       group.tabs = group.tabs.map(candidate => candidate.pocketItemId === itemId ? {
         url: item.url,
@@ -5106,7 +5106,7 @@ function patchPocketItemChip(itemId, state, tab = null) {
     chip.dataset.dragTabId = String(tab.id);
     delete chip.dataset.dragPocketItemId;
     actions.innerHTML = `<button class="restore-tab-button icon-button" data-action="restore-tab" data-tab-id="${tab.id}"${itemAttribute} aria-label="${uiText('Restore to open tabs', '恢复到打开的标签页')}">${buttonIcon('restore')}</button>
-      <button class="chip-action chip-close chip-kill icon-button" data-action="kill-pocket-item" data-tab-id="${tab.id}"${itemAttribute} aria-label="${uiText('Kill this Pocket tab but keep its place', '关闭此「口袋」标签页但保留其位置')}">${buttonIcon('kill')}</button>`;
+      <button class="chip-action chip-close chip-kill icon-button" data-action="kill-pocket-item" data-tab-id="${tab.id}"${itemAttribute} aria-label="${uiText('Kill this Pocket tab but keep its place', '暂时关闭此「口袋」标签页')}">${buttonIcon('kill')}</button>`;
     for (const group of archivedDomainGroups) {
       group.tabs = group.tabs.map(candidate => candidate.pocketItemId === itemId ? {
         ...tab,
@@ -5599,15 +5599,15 @@ function renderDomainCard(group, area = 'open') {
       : '';
     const tabIdAttribute = Number.isInteger(tab.id) ? ` data-tab-id="${tab.id}"` : '';
     const trailingAction = isDeadCaptainKeep
-      ? `<button class="chip-action chip-close icon-button" data-action="close-dead-captain-keep"${captainKeepAttribute} aria-label="${uiText('Remove this dead tab from Keep', '从保留区彻底移除此失效标签页')}">${buttonIcon('close')}</button>`
+      ? `<button class="chip-action chip-close icon-button" data-action="close-dead-captain-keep"${captainKeepAttribute} aria-label="${uiText('Remove this dead tab from Keep', '从「柜子」上彻底移除')}">${buttonIcon('close')}</button>`
       : isDeadCaptainPending
-      ? `<button class="chip-action chip-close icon-button" data-action="close-dead-captain-pending"${captainPendingDeadAttribute} aria-label="${uiText('Remove this dead Pending tab', '从待处理区彻底移除此 dead 标签页')}">${buttonIcon('close')}</button>`
+      ? `<button class="chip-action chip-close icon-button" data-action="close-dead-captain-pending"${captainPendingDeadAttribute} aria-label="${uiText('Remove this dead Pending tab', '从「架子」彻底移除')}">${buttonIcon('close')}</button>`
       : hasDuplicates
       ? `<button class="chip-action chip-close chip-dedup icon-button" data-action="dedup-tab"${tabIdAttribute} data-tab-url="${safeUrl}" aria-label="${uiText('Remove duplicate copies', '去除重复副本')}">${buttonIcon('minus')}</button>`
       : isArchive && !isDormantPocket
-      ? `<button class="chip-action chip-close chip-kill icon-button" data-action="kill-pocket-item"${tabIdAttribute}${pocketItemAttribute} aria-label="${uiText('Kill this Pocket tab but keep its place', '关闭此「口袋」标签页但保留其位置')}">${buttonIcon('kill')}</button>`
+      ? `<button class="chip-action chip-close chip-kill icon-button" data-action="kill-pocket-item"${tabIdAttribute}${pocketItemAttribute} aria-label="${uiText('Kill this Pocket tab but keep its place', '暂时关闭')}">${buttonIcon('kill')}</button>`
       : isLiveCaptainKeep
-      ? `<button class="chip-action chip-close chip-kill icon-button" data-action="kill-captain-keep"${tabIdAttribute}${captainKeepAttribute} aria-label="${uiText('Kill this tab but keep its place', '关闭此标签页但保留其位置')}">${buttonIcon('kill')}</button>`
+      ? `<button class="chip-action chip-close chip-kill icon-button" data-action="kill-captain-keep"${tabIdAttribute}${captainKeepAttribute} aria-label="${uiText('Kill this tab but keep its place', '暂时关闭')}">${buttonIcon('kill')}</button>`
       : `<button class="chip-action chip-close icon-button" data-action="close-single-tab"${tabIdAttribute}${pocketItemAttribute} data-tab-url="${safeUrl}" aria-label="${uiText('Close this tab', '关闭此标签页')}">${buttonIcon('close')}</button>`;
     const chipAction = isDeadCaptainKeep ? 'revive-captain-keep'
       : isDeadCaptainPending ? 'revive-captain-pending-dead' : 'focus-tab';
@@ -5618,11 +5618,11 @@ function renderDomainCard(group, area = 'open') {
       <div class="chip-actions">
         ${isDeadCaptainKeep || isDeadCaptainPending
           ? `${readLaterEnabled
-            ? `<button class="archive-tab-button icon-button" data-action="archive-dead-captain"${captainKeepAttribute}${captainPendingDeadAttribute} aria-label="${uiText('Put this dead tab in Pocket', '将此 dead 标签页扔进「口袋」')}">${buttonIcon('archive')}</button>`
+            ? `<button class="archive-tab-button icon-button" data-action="archive-dead-captain"${captainKeepAttribute}${captainPendingDeadAttribute} aria-label="${uiText('Put this dead tab in Pocket', '扔进「口袋」')}">${buttonIcon('archive')}</button>`
             : ''}
              ${trailingAction}`
           : isArchive
-          ? `<button class="restore-tab-button icon-button" data-action="restore-tab"${tabIdAttribute}${pocketItemAttribute} aria-label="${uiText('Restore to open tabs', '恢复到打开的标签页')}">${buttonIcon('restore')}</button>
+          ? `<button class="restore-tab-button icon-button" data-action="restore-tab"${tabIdAttribute}${pocketItemAttribute} aria-label="${uiText('Restore to open tabs', '恢复到打开的')}">${buttonIcon('restore')}</button>
              ${trailingAction}`
           : `<button class="archive-tab-button icon-button" data-action="archive-tab" data-tab-id="${tab.id}" aria-label="${uiText('Put in Pocket', '扔进「口袋」')}">${buttonIcon('archive')}</button>
              ${trailingAction}`}
@@ -5645,18 +5645,18 @@ function renderDomainCard(group, area = 'open') {
     });
     const pendingDisabled = pendingCaptainTabs.length === 0 ? ' disabled' : '';
     pagesHtml = `
-      <div class="captain-subgroup captain-subgroup-retained${retainedCaptainTabs.length === 0 ? ' is-empty' : ''}" aria-label="${escapeHtmlAttribute(uiText(`${groupCaptainTitle} Keep area`, `${groupCaptainTitle} 保留区`))}">
+      <div class="captain-subgroup captain-subgroup-retained${retainedCaptainTabs.length === 0 ? ' is-empty' : ''}" aria-label="${escapeHtmlAttribute(uiText(`${groupCaptainTitle} Keep area`, `${groupCaptainTitle} 「柜子」`))}">
         <div class="mission-pages">${renderTabList(retainedCaptainTabs)}</div>
       </div>
       <div class="captain-subgroup-divider">
         <span class="captain-subgroup-divider-dot" aria-hidden="true"></span>
         <span class="captain-subgroup-divider-line" aria-hidden="true"></span>
         <div class="group-card-actions captain-subgroup-actions">
-          <button class="group-card-action group-archive-button captain-pending-archive-button icon-button" data-action="archive-captain-pending" data-captain-group="${group.domain}" aria-label="${uiText('Put every pending Captain tab in Pocket', '将待处理区全部扔进「口袋」')}"${pendingDisabled}>${buttonIcon('archive')}</button>
-          <button class="group-card-action group-close-button captain-pending-delete-button icon-button" data-action="delete-captain-pending" data-captain-group="${group.domain}" aria-label="${uiText('Delete every pending Captain tab', '删除待处理区全部标签页')}"${pendingDisabled}>${buttonIcon('close')}</button>
+          <button class="group-card-action group-archive-button captain-pending-archive-button icon-button" data-action="archive-captain-pending" data-captain-group="${group.domain}" aria-label="${uiText('Put every pending Captain tab in Pocket', '将「架子」上的全部扔进「口袋」')}"${pendingDisabled}>${buttonIcon('archive')}</button>
+          <button class="group-card-action group-close-button captain-pending-delete-button icon-button" data-action="delete-captain-pending" data-captain-group="${group.domain}" aria-label="${uiText('Delete every pending Captain tab', '清空「架子」')}"${pendingDisabled}>${buttonIcon('close')}</button>
         </div>
       </div>
-      <div class="captain-subgroup captain-subgroup-pending${pendingCaptainTabs.length === 0 ? ' is-empty' : ''}" aria-label="${escapeHtmlAttribute(uiText(`${groupCaptainTitle} Pending area`, `${groupCaptainTitle} 待处理区`))}">
+      <div class="captain-subgroup captain-subgroup-pending${pendingCaptainTabs.length === 0 ? ' is-empty' : ''}" aria-label="${escapeHtmlAttribute(uiText(`${groupCaptainTitle} Pending area`, `${groupCaptainTitle} 「架子」`))}">
         <div class="mission-pages">${renderTabList(pendingCaptainTabs)}</div>
       </div>
       <span class="captain-subgroup-drop-indicator" aria-hidden="true"></span>`;
@@ -5677,10 +5677,10 @@ function renderDomainCard(group, area = 'open') {
     ? `<button class="group-card-action group-archive-button icon-button" data-action="archive-domain-tabs" data-area="${area}" data-domain-id="${stableId}" aria-label="${uiText('Put this group in Pocket', '将此组扔进「口袋」')}">${buttonIcon('archive')}</button>`
     : '';
   const groupRestoreButton = isArchive
-    ? `<button class="group-card-action group-restore-button icon-button" data-action="restore-domain-tabs" data-area="${area}" data-domain-id="${stableId}" aria-label="${uiText('Restore all tabs in this group', '恢复此组全部标签页')}">${buttonIcon('restore')}</button>`
+    ? `<button class="group-card-action group-restore-button icon-button" data-action="restore-domain-tabs" data-area="${area}" data-domain-id="${stableId}" aria-label="${uiText('Restore all tabs in this group', '恢复此组全部')}">${buttonIcon('restore')}</button>`
     : '';
   const groupCloseIcon = hasCaptainKeepArea ? 'kill' : 'close';
-  const groupCloseButton = `<button class="group-card-action group-close-button icon-button" data-action="close-domain-tabs" data-area="${area}" data-domain-id="${stableId}" aria-label="${uiText('Close all tabs in this group', '关闭此组全部标签页')}">${buttonIcon(groupCloseIcon)}</button>`;
+  const groupCloseButton = `<button class="group-card-action group-close-button icon-button" data-action="close-domain-tabs" data-area="${area}" data-domain-id="${stableId}" aria-label="${uiText('Close all tabs in this group', '关闭此组全部')}">${buttonIcon(groupCloseIcon)}</button>`;
   const groupControls = `<div class="group-card-actions">
     ${isArchive ? groupRestoreButton : groupArchiveButton}
     ${groupCloseButton}
@@ -6057,7 +6057,7 @@ async function completeOtherAction() {
     scheduleDashboardRefresh();
     showToast(uiText(
       `Deleted ${closedTabs.length} other ${descriptor.scope === 'groups' ? 'group tabs' : 'tabs'}`,
-      `已删除其他 ${closedTabs.length} 个标签页`,
+      `已删除其他 ${closedTabs.length} 个`,
     ), 2500, 'destructive');
     return;
   }
@@ -6101,7 +6101,7 @@ async function closeCurrentCandidateBatch() {
     playCloseSound();
     scheduleDashboardRefresh();
 
-    showToast(uiText(`Deleted ${closedTabs.length} tab${closedTabs.length === 1 ? '' : 's'}`, `已删除 ${closedTabs.length} 个标签页`), 2500, 'destructive');
+    showToast(uiText(`Deleted ${closedTabs.length} tab${closedTabs.length === 1 ? '' : 's'}`, `已删除 ${closedTabs.length} 个`), 2500, 'destructive');
   } finally {
     isProcessingCandidateBatch = false;
   }
@@ -6123,7 +6123,7 @@ async function archiveAllOpenTabs() {
   scheduleDashboardRefresh();
   showToast(uiText(
     `Pocketed ${changes.length} tab${changes.length === 1 ? '' : 's'} outside Keep areas`,
-    `已将保留区外的 ${changes.length} 个扔进「口袋」`,
+    `已将「柜子」外的 ${changes.length} 个扔进「口袋」`,
   ));
 }
 
@@ -6146,7 +6146,7 @@ async function deleteAllOpenLooseTabs() {
   scheduleDashboardRefresh();
   showToast(uiText(
     `Deleted ${closedTabs.length} tab${closedTabs.length === 1 ? '' : 's'} outside Keep areas`,
-    `已删除保留区外的 ${closedTabs.length} 个`,
+    `已删除「柜子」外的 ${closedTabs.length} 个`,
   ), 2500, 'destructive');
 }
 
@@ -6685,7 +6685,7 @@ document.addEventListener('click', async (e) => {
       }
       showToast(uiText(
         `Closed ${closedTabs.length} duplicate tab${closedTabs.length === 1 ? '' : 's'}`,
-        `已关闭 ${closedTabs.length} 个重复标签页`,
+        `已关闭 ${closedTabs.length} 个重复的`,
       ), 2500, 'destructive');
       if (isCaptainKeepDedup) traceCaptainKeepDedup('complete', { result: 'success' });
     } catch (error) {
@@ -6698,7 +6698,7 @@ document.addEventListener('click', async (e) => {
         traceCaptainKeepDedup('error', {
           error: String(error?.stack || error?.message || error),
         });
-        showToast(uiText('Could not remove duplicate tabs', '无法去除重复标签页'));
+        showToast(uiText('Could not remove duplicate tabs', '无法去除重复的'));
         return;
       }
       throw error;
@@ -6720,7 +6720,7 @@ document.addEventListener('click', async (e) => {
     if (count === 0) return;
     showToast(uiText(
       `Closed ${count} tab${count === 1 ? '' : 's'}`,
-      `已关闭 ${count} 个标签页`,
+      `已关闭 ${count} 个`,
     ), 2500, 'destructive');
     return;
   }
@@ -6739,7 +6739,7 @@ document.addEventListener('click', async (e) => {
 
     playCloseSound();
     scheduleDashboardRefresh();
-    showToast(uiText(`Deleted ${count} tab${count !== 1 ? 's' : ''} from Pocket`, `已删除「口袋」中的 ${count} 个标签页`), 2500, 'destructive');
+    showToast(uiText(`Deleted ${count} tab${count !== 1 ? 's' : ''} from Pocket`, `已删除「口袋」中的 ${count} 个`), 2500, 'destructive');
     return;
   }
 
@@ -6780,11 +6780,11 @@ document.addEventListener('click', async (e) => {
       celebrateDeletedTabs([closingTab], confettiOrigins);
       openTabs = openTabs.filter(tab => tab.id !== tabId);
       if (!patchCaptainKeepChip(keepId, 'dead')) await renderDashboard();
-      showToast(uiText('Closed 1 tab', '已关闭 1 个标签页'), 2500, 'destructive');
+      showToast(uiText('Closed 1 tab', '已关闭 1 个'), 2500, 'destructive');
     } catch (error) {
       unmarkTabsForLocalClose([tabId]);
       console.warn('[tab-out] Could not kill the Captain Keep tab:', error);
-      showToast(uiText('Could not kill this tab', '无法关闭此标签页'));
+      showToast(uiText('Could not kill this tab', '无法关闭'));
     } finally {
       endDashboardRefreshSuppression();
       captainKeepLifecycleInFlight.delete(keepId);
@@ -6826,11 +6826,11 @@ document.addEventListener('click', async (e) => {
         suppressionDepth: dashboardRefreshSuppressionDepth,
       });
       if (!domPatched) await renderDashboard();
-      showToast(uiText('Tab reopened', '标签页已重新打开'));
+      showToast(uiText('Tab reopened', '已重新打开'));
     } catch (error) {
       traceCaptainKeepRevive('error', { error: String(error?.stack || error?.message || error) });
       console.warn('[tab-out] Could not reopen the dead Captain Keep tab:', error);
-      showToast(uiText('Could not reopen this tab', '无法重新打开此标签页'));
+      showToast(uiText('Could not reopen this tab', '无法重新打开'));
     } finally {
       endDashboardRefreshSuppression();
       captainKeepLifecycleInFlight.delete(keepId);
@@ -6855,10 +6855,10 @@ document.addEventListener('click', async (e) => {
       await requestCaptainKeepLifecycle('remove-dead', { keepId });
       await pushUndoEntry({ type: 'captain-keep-lifecycle', transition: 'remove-dead', keepItem });
       if (!removeCaptainKeepChip(keepId)) await renderDashboard();
-      showToast(uiText('Removed dead tab from Keep', '已从保留区移除失效标签页'), 2500, 'destructive');
+      showToast(uiText('Removed dead tab from Keep', '已从「柜子」上移除'), 2500, 'destructive');
     } catch (error) {
       console.warn('[tab-out] Could not remove the dead Captain Keep tab:', error);
-      showToast(uiText('Could not remove this dead tab', '无法移除此失效标签页'));
+      showToast(uiText('Could not remove this dead tab', '无法移除'));
     } finally {
       captainKeepLifecycleInFlight.delete(keepId);
     }
@@ -6877,10 +6877,10 @@ document.addEventListener('click', async (e) => {
       const response = await openDeadCaptainPending(pendingItemId, pendingItem);
       if (response.createdTab) openTabs = [...openTabs, response.createdTab];
       await renderDashboard();
-      showToast(uiText('Pending tab reopened', '待处理标签页已重新打开'));
+      showToast(uiText('Pending tab reopened', '已重新打开'));
     } catch (error) {
       console.warn('[tab-out] Could not reopen dead Pending tab:', error);
-      showToast(uiText('Could not reopen this Pending tab', '无法重新打开此待处理标签页'));
+      showToast(uiText('Could not reopen this Pending tab', '无法重新打开'));
     } finally {
       endDashboardRefreshSuppression();
       captainKeepLifecycleInFlight.delete(pendingItemId);
@@ -6897,10 +6897,10 @@ document.addEventListener('click', async (e) => {
     try {
       await requestCaptainKeepLifecycle('remove-pending-dead', { keepItem: { pendingItemId } });
       await renderDashboard();
-      showToast(uiText('Removed dead Pending tab', '已移除 dead 待处理标签页'), 2500, 'destructive');
+      showToast(uiText('Removed dead Pending tab', '已移除'), 2500, 'destructive');
     } catch (error) {
       console.warn('[tab-out] Could not remove dead Pending tab:', error);
-      showToast(uiText('Could not remove this Pending tab', '无法移除此待处理标签页'));
+      showToast(uiText('Could not remove this Pending tab', '无法移除'));
     } finally {
       captainKeepLifecycleInFlight.delete(pendingItemId);
     }
@@ -6920,10 +6920,10 @@ document.addEventListener('click', async (e) => {
       const result = await moveDeadCaptainItemToPocket({ keepId, pendingItemId });
       if (!result.moved) return;
       await renderDashboard();
-      showToast(uiText('Moved dead tab to Pocket', '已将 dead 标签页移到「口袋」'));
+      showToast(uiText('Moved dead tab to Pocket', '已扔进「口袋」'));
     } catch (error) {
       console.warn('[tab-out] Could not move dead Captain tab to Pocket:', error);
-      showToast(uiText('Could not move this dead tab to Pocket', '无法将此 dead 标签页移到「口袋」'));
+      showToast(uiText('Could not move this dead tab to Pocket', '无法将此扔进到「口袋」'));
     } finally {
       captainKeepLifecycleInFlight.delete(lifecycleId);
     }
@@ -6973,7 +6973,7 @@ document.addEventListener('click', async (e) => {
     if (count === 0) return;
     showToast(uiText(
       `Closed ${count} tab${count === 1 ? '' : 's'}`,
-      `已关闭 ${count} 个标签页`,
+      `已关闭 ${count} 个`,
     ), 2500, 'destructive');
     return;
   }
@@ -6994,7 +6994,7 @@ document.addEventListener('click', async (e) => {
       const changes = await changeArchiveMembershipWithUndo(tabIds, true);
       if (changes.length === 0) return;
       scheduleDashboardRefresh();
-      showToast(uiText(`Put ${changes.length} pending ${actionCaptainTitle} tab${changes.length === 1 ? '' : 's'} in Pocket`, `已将 ${actionCaptainTitle} 待处理区的 ${changes.length} 个标签页扔进「口袋」`));
+      showToast(uiText(`Put ${changes.length} pending ${actionCaptainTitle} tab${changes.length === 1 ? '' : 's'} in Pocket`, `已将 ${actionCaptainTitle} 「架子」上的 ${changes.length} 个扔进「口袋」`));
       return;
     }
 
@@ -7002,7 +7002,7 @@ document.addEventListener('click', async (e) => {
     if (closedTabs.length === 0) return;
     playCloseSound();
     scheduleDashboardRefresh();
-    showToast(uiText(`Deleted ${closedTabs.length} pending ${actionCaptainTitle} tab${closedTabs.length === 1 ? '' : 's'}`, `已删除 ${actionCaptainTitle} 待处理区的 ${closedTabs.length} 个标签页`), 2500, 'destructive');
+    showToast(uiText(`Deleted ${closedTabs.length} pending ${actionCaptainTitle} tab${closedTabs.length === 1 ? '' : 's'}`, `已删除 ${actionCaptainTitle} 「架子」上的 ${closedTabs.length} 个`), 2500, 'destructive');
     return;
   }
 
@@ -7024,7 +7024,7 @@ document.addEventListener('click', async (e) => {
     showToast(closedDuplicates.length > 0
       ? uiText(
         `Removed ${closedDuplicates.length} duplicate tab${closedDuplicates.length === 1 ? '' : 's'} and put ${changes.length === 1 ? 'one tab' : `${changes.length} tabs`} in Pocket`,
-        `已去除 ${closedDuplicates.length} 个重复标签页，并将${changes.length === 1 ? '一份' : `${changes.length} 份`}扔进「口袋」`,
+        `已去除 ${closedDuplicates.length} 个的，并将${changes.length === 1 ? '一份' : `${changes.length} 份`}扔进「口袋」`,
       )
       : uiText(
         `Put ${changes.length} tab${changes.length === 1 ? '' : 's'} in Pocket`,
@@ -7085,7 +7085,7 @@ document.addEventListener('click', async (e) => {
       const discardedCount = await discardDormantPocketItemsWithUndo([pocketItemId]);
       if (discardedCount === 0) return;
       await renderDashboard();
-      showToast(uiText('Closed 1 tab', '已关闭 1 个标签页'), 2500, 'destructive');
+      showToast(uiText('Closed 1 tab', '已关闭 1 个'), 2500, 'destructive');
       return;
     }
     if (sourceChip?.classList.contains('is-marquee-selected')
@@ -7106,7 +7106,7 @@ document.addEventListener('click', async (e) => {
     scheduleDashboardRefresh();
     showToast(uiText(
       `Closed ${closedTabs.length} tab${closedTabs.length === 1 ? '' : 's'}`,
-      `已关闭 ${closedTabs.length} 个标签页`,
+      `已关闭 ${closedTabs.length} 个`,
     ), 2500, 'destructive');
     return;
   }
@@ -7135,7 +7135,7 @@ document.addEventListener('click', async (e) => {
       : group.domain === '__landing-pages__'
         ? uiText('Homepages', '主页')
         : (group.label || friendlyDomain(group.domain));
-    showToast(uiText(`Closed ${count} tab${count !== 1 ? 's' : ''} from ${groupLabel}`, `已关闭 ${groupLabel} 中的 ${count} 个标签页`), 2500, 'destructive');
+    showToast(uiText(`Closed ${count} tab${count !== 1 ? 's' : ''} from ${groupLabel}`, `已关闭 ${groupLabel} 中的 ${count} 个`), 2500, 'destructive');
 
     return;
   }
@@ -7396,7 +7396,7 @@ document.addEventListener('keydown', async (e) => {
         if (count === 0) return;
         showToast(uiText(
           `Closed ${count} selected Pocket tab${count === 1 ? '' : 's'} and kept ${count === 1 ? 'it' : 'them'} in Pocket`,
-          `已关闭选中的 ${count} 个「口袋」标签页并保留其 dead 状态`,
+          `已暂时关闭选中的 ${count} 个`,
         ), 2500, 'destructive');
       });
       return;
@@ -7409,7 +7409,7 @@ document.addEventListener('keydown', async (e) => {
       scheduleDashboardRefresh();
       showToast(uiText(
         `Closed ${closedTabs.length} selected tab${closedTabs.length === 1 ? '' : 's'}`,
-        `已关闭选中的 ${closedTabs.length} 个标签页`,
+        `已关闭选中的 ${closedTabs.length} 个`,
       ), 2500, 'destructive');
     });
     return;
@@ -8555,7 +8555,7 @@ document.addEventListener('drop', async (e) => {
         if (result?.removedCount > 0) {
           showToast(uiText(
             `Removed ${result.removedCount} duplicate${result.removedCount === 1 ? '' : 's'}; kept one in Keep`,
-            `已移除 ${result.removedCount} 个重复项，并在保留区保留一项`,
+            `已移除 ${result.removedCount} 个重复的，并在「柜子」上保留一项`,
           ));
         }
         return;
@@ -8605,7 +8605,7 @@ document.addEventListener('drop', async (e) => {
         }
         draggedCaptainKeepIds = [];
         await renderDashboard();
-        showToast(uiText('Moved dead Keep tab to Pending', '已将 dead Keep 标签页移到待处理区'));
+        showToast(uiText('Moved dead Keep tab to Pending', '已移到「架子」上'));
         return;
       }
       const beforeOrder = (captainKeepManifestSnapshot?.tabs || []).map(item => item.keepId);
@@ -8647,7 +8647,7 @@ document.addEventListener('drop', async (e) => {
         if (result.removedCount > 0) {
           showToast(uiText(
             `Removed ${result.removedCount} duplicate${result.removedCount === 1 ? '' : 's'}; kept the dragged tab in Keep`,
-            `已移除 ${result.removedCount} 个重复项，并在保留区保留拖入项`,
+            `已移除 ${result.removedCount} 个重复的，并在「柜子」上保留拖入的`,
           ));
         }
         return;
@@ -8720,9 +8720,9 @@ document.addEventListener('drop', async (e) => {
     showToast(result.removedDuplicateCount > 0
       ? uiText(
         `Removed ${result.removedDuplicateCount} duplicate${result.removedDuplicateCount === 1 ? '' : 's'}; kept the new dead tab in Pocket`,
-        `已移除 ${result.removedDuplicateCount} 个重复项，并在「口袋」保留新移入的 dead 标签页`,
+        `已移除 ${result.removedDuplicateCount} 个重复项，并扔进「口袋」`,
       )
-      : uiText('Moved dead tab to Pocket', '已将 dead 标签页移到「口袋」'));
+      : uiText('Moved dead tab to Pocket', '已扔进「口袋」'));
     return;
   }
 
@@ -8751,7 +8751,7 @@ document.addEventListener('drop', async (e) => {
   showToast(dropArea === 'archive' && closedDuplicates.length > 0
     ? uiText(
       `Removed ${closedDuplicates.length} duplicate tab${closedDuplicates.length === 1 ? '' : 's'} and put ${changes.length === 1 ? 'one tab' : `${changes.length} tabs`} in Pocket`,
-      `已去除 ${closedDuplicates.length} 个重复标签页，并将${changes.length === 1 ? '一份' : `${changes.length} 份`}扔进「口袋」`,
+      `已去除 ${closedDuplicates.length} 个重复的，并将${changes.length === 1 ? '一份' : `${changes.length} 份`}扔进「口袋」`,
     )
     : dropArea === 'archive'
       ? uiText(

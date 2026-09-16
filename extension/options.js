@@ -35,7 +35,7 @@ const COPY = {
     heading: 'Tab Out 设置', basicSettings: '基础设置', captainSettings: '任务组',
     language: '语言', columns: 'Dashboard 列数', twoColumns: '两列', threeColumns: '三列', readLaterSection: '「口袋」', readLaterQuestion: '是否需要「口袋」？', pocketGrouping: '「口袋」的分组', yes: '需要', no: '不需要', captainNumber: '任务组 {number}', addCaptain: '添加任务组', deleteCaptain: '删除任务组', confirmDeleteCaptain: '确认删除“{name}”？', taskGroup: '任务组',
     profile: 'Profile', chooseProfile: '选择 Profile', customTaskGroup: '自定义任务组', matchRules: '网页和域名', groupName: '别名',
-    keepAreaQuestion: '需要保留区？', keepAreaHelp: '将此组分成保留区和待处理区。', groupIcon: '图',
+    keepAreaQuestion: '需要「柜子」？', keepAreaHelp: '将此组分成「柜子」和「架子」。', groupIcon: '图',
     groupColor: '色', grey: '灰色', blue: '蓝色', red: '红色', yellow: '黄色', green: '绿色', pink: '粉色', purple: '紫色', cyan: '青色', orange: '橙色',
     save: '保存设置', invalidTaskGroup: '请为每个任务组输入至少一个有效网页或域名。', overlap: '任务组不能使用相同或互相覆盖的匹配规则。', duplicateName: '任务组别名必须不同。', updated: '任务组已更新。', saved: '已保存。', loadError: '无法加载设置。',
   },
