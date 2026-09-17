@@ -23,6 +23,7 @@
     POCKET_DEMON_BULK_LEGACY: 'demonBulkIncludesArchive',
     POCKET_PURE_DEMON_LEGACY: 'pureDemonMode',
     TAB_CUSTOM_LABELS: 'tabCustomLabels',
+    PAGE_CUSTOM_LABELS: 'pageCustomLabels',
     CAPTAIN_CONFIG_LEGACY: 'captainConfig',
     CAPTAIN_CONFIGS: 'captainConfigs',
     CAPTAIN_KEEP_MANIFEST: 'captainKeepManifest',
@@ -61,6 +62,7 @@
     SEMANTIC_ERROR: 'tabout:semantic-error',
     SET_CAPTAIN_KEEP_LABEL: 'tabout:set-captain-keep-label',
     SET_TAB_CUSTOM_LABEL: 'tabout:set-tab-custom-label',
+    SET_PAGE_CUSTOM_LABEL: 'tabout:set-page-custom-label',
   });
 
   const DOM_EVENTS = Object.freeze({
@@ -87,6 +89,7 @@
     [MESSAGES.SEMANTIC_ERROR]: Object.freeze({ target: null, fields: Object.freeze(['url', 'reason', 'securityVerification']), required: Object.freeze(['url', 'reason', 'securityVerification']) }),
     [MESSAGES.SET_CAPTAIN_KEEP_LABEL]: Object.freeze({ target: 'background', fields: Object.freeze(['tabId', 'customLabel']), required: Object.freeze(['tabId', 'customLabel']) }),
     [MESSAGES.SET_TAB_CUSTOM_LABEL]: Object.freeze({ target: 'background', fields: Object.freeze(['tabId', 'customLabel']), required: Object.freeze(['tabId', 'customLabel']) }),
+    [MESSAGES.SET_PAGE_CUSTOM_LABEL]: Object.freeze({ target: 'background', fields: Object.freeze(['url', 'customLabel']), required: Object.freeze(['url', 'customLabel']) }),
   });
 
   function createRuntimeMessage(type, payload = {}, targetOverride = undefined) {
@@ -162,6 +165,13 @@
       .map(([tabId, label]) => [tabId, normalizeCustomLabel(label)]));
   }
 
+  function normalizePageCustomLabels(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+    return Object.fromEntries(Object.entries(value)
+      .filter(([url, label]) => url && normalizeCustomLabel(label))
+      .map(([url, label]) => [url, normalizeCustomLabel(label)]));
+  }
+
   globalThis.TabOutContracts = Object.freeze({
     CONTRACT_VERSION,
     DOM_EVENTS,
@@ -174,6 +184,7 @@
     normalizeOrderKeys,
     normalizePocketItems,
     normalizePocketLiveItemIds,
+    normalizePageCustomLabels,
     normalizeTabCustomLabels,
     normalizeTabIds,
   });

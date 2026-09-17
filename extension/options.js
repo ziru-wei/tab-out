@@ -26,18 +26,20 @@ const COPY = {
   en: {
     heading: 'Tab Out Settings', basicSettings: 'Basics', captainSettings: 'Task groups',
     language: 'Language', columns: 'Dashboard columns', twoColumns: 'Two columns', threeColumns: 'Three columns', readLaterSection: 'Pocket', readLaterQuestion: 'Do you need a Pocket?', pocketGrouping: 'Pocket grouping', yes: 'Yes', no: 'No', captainNumber: 'Task group {number}', addCaptain: 'Add task group', deleteCaptain: 'Delete task group', confirmDeleteCaptain: 'Delete “{name}”?', taskGroup: 'Task Group',
-    profile: 'Profile', chooseProfile: 'Choose a profile', customTaskGroup: 'Custom Task Group', matchRules: 'Websites and domains', groupName: 'Alias',
+    profile: 'Profile', customTaskGroup: 'Custom', matchRules: 'Websites and domains', groupName: 'Alias',
+    rulesPlaceholder: 'You can add, for example:\nPDF (for PDF viewer)\nwikipedia.org (for all wiki pages)\nhttps://github.com/ziru-wei/tab-out (for this page only)',
     keepAreaQuestion: 'Keep area?', keepAreaHelp: 'Split this group into Keep and Pending.', groupIcon: ' ',
     groupColor: ' ', grey: 'Grey', blue: 'Blue', red: 'Red', yellow: 'Yellow', green: 'Green', pink: 'Pink', purple: 'Purple', cyan: 'Cyan', orange: 'Orange',
-    save: 'Save settings', invalidTaskGroup: 'Enter at least one valid website or domain for each Task Group.', overlap: 'Task groups cannot use the same or overlapping match rules.', duplicateName: 'Task group aliases must be different.', updated: 'Task groups updated.', saved: 'Saved.', loadError: 'Could not load settings.',
+    save: 'Save settings', invalidTaskGroup: 'Enter at least one valid PDF, website, or domain rule for each Task Group.', overlap: 'Task groups cannot use the same or overlapping match rules.', duplicateName: 'Task group aliases must be different.', updated: 'Task groups updated.', saved: 'Saved.', loadError: 'Could not load settings.',
   },
   zh: {
     heading: 'Tab Out 设置', basicSettings: '基础设置', captainSettings: '任务组',
     language: '语言', columns: 'Dashboard 列数', twoColumns: '两列', threeColumns: '三列', readLaterSection: '「口袋」', readLaterQuestion: '是否需要「口袋」？', pocketGrouping: '「口袋」的分组', yes: '需要', no: '不需要', captainNumber: '任务组 {number}', addCaptain: '添加任务组', deleteCaptain: '删除任务组', confirmDeleteCaptain: '确认删除“{name}”？', taskGroup: '任务组',
-    profile: 'Profile', chooseProfile: '选择 Profile', customTaskGroup: '自定义任务组', matchRules: '网页和域名', groupName: '别名',
+    profile: 'Profile', customTaskGroup: '自定义', matchRules: '网页和域名', groupName: '别名',
+    rulesPlaceholder: '可以添加，例如：\nPDF（匹配 PDF 阅读器）\nwikipedia.org（匹配所有维基页面）\nhttps://github.com/ziru-wei/tab-out（仅匹配这个网页）',
     keepAreaQuestion: '需要「柜子」？', keepAreaHelp: '将此组分成「柜子」和「架子」。', groupIcon: '图',
     groupColor: '色', grey: '灰色', blue: '蓝色', red: '红色', yellow: '黄色', green: '绿色', pink: '粉色', purple: '紫色', cyan: '青色', orange: '橙色',
-    save: '保存设置', invalidTaskGroup: '请为每个任务组输入至少一个有效网页或域名。', overlap: '任务组不能使用相同或互相覆盖的匹配规则。', duplicateName: '任务组别名必须不同。', updated: '任务组已更新。', saved: '已保存。', loadError: '无法加载设置。',
+    save: '保存设置', invalidTaskGroup: '请为每个任务组输入至少一个有效 PDF、网页或域名规则。', overlap: '任务组不能使用相同或互相覆盖的匹配规则。', duplicateName: '任务组别名必须不同。', updated: '任务组已更新。', saved: '已保存。', loadError: '无法加载设置。',
   },
 };
 
@@ -55,31 +57,21 @@ function captainCardHtml(index) {
         <h3 data-captain-title>${optionText('captainNumber', { number: index + 1 })}</h3>
         <button class="delete-captain-button" type="button" data-action="delete-captain" aria-label="${optionText('deleteCaptain')}">-</button>
       </div>
-      <fieldset class="captain-type-options">
-        <label class="choice type-choice">
-          <input type="radio" name="captainType${index}" value="pdf" checked>
-          <span><strong>PDF</strong></span>
-        </label>
-        <label class="choice type-choice">
-          <input type="radio" name="captainType${index}" value="task">
-          <span><strong>${optionText('taskGroup')}</strong></span>
-        </label>
-      </fieldset>
       <div class="captain-details">
-        <div class="task-options" data-field="taskFields" hidden>
+        <div class="task-options">
           <label class="field inline-task-field">
             <span>${optionText('profile')}</span>
             <select class="captain-profile" data-field="profile">
-              <option value="">${optionText('chooseProfile')}</option>
+              <option value="custom">${optionText('customTaskGroup')}</option>
+              <option value="pdf">PDF Only</option>
               <option value="feishu.cn">Feishu / 飞书</option>
               <option value="bambulab.com">Bambu Lab / 拓竹</option>
               <option value="dl.acm.org">Paper Searching</option>
-              <option value="custom">${optionText('customTaskGroup')}</option>
             </select>
           </label>
           <label class="field inline-task-field custom-task-field">
             <span>${optionText('matchRules')}</span>
-            <textarea data-field="rules" rows="3" autocomplete="off"></textarea>
+            <textarea data-field="rules" rows="7" autocomplete="off" placeholder="${optionText('rulesPlaceholder')}"></textarea>
           </label>
           <label class="field inline-task-field">
             <span>${optionText('groupName')}</span>
@@ -159,7 +151,6 @@ function captainCards() {
 
 function fields(card) {
   return {
-    taskFields: card.querySelector('[data-field="taskFields"]'),
     profile: card.querySelector('[data-field="profile"]'),
     rules: card.querySelector('[data-field="rules"]'),
     title: card.querySelector('[data-field="title"]'),
@@ -167,10 +158,6 @@ function fields(card) {
     keepArea: card.querySelector('[data-field="keepArea"]'),
     icon: card.querySelector('[data-field="icon"]'),
   };
-}
-
-function selectedType(card) {
-  return card.querySelector('input[type="radio"]:checked')?.value || 'pdf';
 }
 
 function applyBuiltInCaptainProfile(card) {
@@ -192,25 +179,17 @@ function syncProfileControl(card) {
   const profileKey = profile
     ? Object.keys(BUILT_IN_CAPTAIN_PROFILES).find(key => BUILT_IN_CAPTAIN_PROFILES[key] === profile)
     : '';
-  controls.profile.value = profileKey || (rules.length > 0 ? 'custom' : '');
-}
-
-function syncCard(card) {
-  const taskEnabled = selectedType(card) === 'task';
-  fields(card).taskFields.hidden = !taskEnabled;
+  controls.profile.value = profileKey || 'custom';
 }
 
 function populateConfig(card, config) {
   const controls = fields(card);
-  const typeControl = card.querySelector(`input[value="${config.type}"]`);
-  if (typeControl) typeControl.checked = true;
   controls.rules.value = captainRules.serializeTaskRules(config.matchRules).join('\n');
   controls.title.value = config.customTitle;
   controls.color.value = config.groupColor;
   controls.keepArea.checked = config.keepAreaEnabled;
   controls.icon.value = config.icon;
   syncProfileControl(card);
-  syncCard(card);
 }
 
 const normalizeConfig = captainRules.normalizeConfig;
@@ -218,17 +197,17 @@ const normalizeConfigs = captainRules.normalizeConfigs;
 const configKey = captainRules.configKey;
 
 function effectiveTitle(config) {
-  return config.customTitle || (config.type === 'task' ? config.domain : 'PDF');
+  return config.customTitle || config.domain
+    || (config.matchRules.some(rule => rule.kind === 'pdf') ? 'PDF' : '');
 }
 
 function readConfig(card, index) {
   const controls = fields(card);
-  const type = selectedType(card);
   return normalizeConfig({
     enabled: true,
-    type,
-    matchRules: type === 'task' ? captainRules.normalizeTaskRules(controls.rules.value) : [],
-    customTitle: type === 'task' ? controls.title.value : '',
+    type: 'task',
+    matchRules: captainRules.normalizeTaskRules(controls.rules.value),
+    customTitle: controls.title.value,
     groupColor: controls.color.value,
     keepAreaEnabled: controls.keepArea.checked,
     icon: controls.icon.value,
@@ -281,10 +260,6 @@ form.addEventListener('change', event => {
   }
   const card = event.target.closest('.captain-settings');
   if (!card) return;
-  if (event.target.matches('input[type="radio"]')) {
-    syncCard(card);
-    if (event.target.value === 'task') applyBuiltInCaptainProfile(card);
-  }
   if (event.target.matches('[data-field="profile"]')) {
     const controls = fields(card);
     if (controls.profile.value === 'custom') {
@@ -321,7 +296,7 @@ addCaptainButton.addEventListener('click', () => {
   const next = readConfigs();
   next.push(normalizeConfig({ enabled: true, type: 'task', matchRules: [], customTitle: '', groupColor: 'grey', keepAreaEnabled: true, icon: 'circle' }, next.length));
   renderCaptains(next);
-  captainCards().at(-1)?.querySelector('[data-field="profile"]')?.focus();
+  captainCards().at(-1)?.querySelector('[data-field="rules"]')?.focus();
   status.textContent = '';
 });
 
@@ -329,7 +304,7 @@ form.addEventListener('submit', async event => {
   event.preventDefault();
   status.textContent = '';
   const next = readConfigs();
-  const invalidIndex = next.findIndex(config => config.type === 'task' && config.matchRules.length === 0);
+  const invalidIndex = next.findIndex(config => config.matchRules.length === 0);
   if (invalidIndex >= 0) {
     status.textContent = optionText('invalidTaskGroup');
     fields(captainCards()[invalidIndex]).rules.focus();
@@ -339,9 +314,7 @@ form.addEventListener('submit', async event => {
     for (let secondIndex = firstIndex + 1; secondIndex < next.length; secondIndex += 1) {
       const first = next[firstIndex];
       const second = next[secondIndex];
-      const rulesOverlap = first.type === 'task' && second.type === 'task'
-        && captainRules.taskRulesOverlap(first.matchRules, second.matchRules);
-      if ((first.type === 'pdf' && second.type === 'pdf') || rulesOverlap) {
+      if (captainRules.taskRulesOverlap(first.matchRules, second.matchRules)) {
         status.textContent = optionText('overlap');
         return;
       }

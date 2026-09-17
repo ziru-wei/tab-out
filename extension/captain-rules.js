@@ -13,6 +13,13 @@
   }
 
   const BUILT_IN_PROFILES = Object.freeze({
+    pdf: Object.freeze({
+      title: 'PDF',
+      color: 'blue',
+      icon: 'book',
+      label: 'PDF Only',
+      matchRules: Object.freeze(['PDF']),
+    }),
     'feishu.cn': Object.freeze({
       title: '书',
       color: 'cyan',
@@ -84,6 +91,9 @@
       ? value.value : value;
     const raw = String(requestedValue || '').trim();
     if (!raw) return null;
+    if (requestedKind === 'pdf' || (!requestedKind && /^pdf$/i.test(raw))) {
+      return { kind: 'pdf', value: 'PDF' };
+    }
     const pageUrl = requestedKind === 'page' || /^https?:\/\//i.test(raw)
       ? normalizePageUrl(raw) : '';
     if (pageUrl) return { kind: 'page', value: pageUrl };
@@ -127,28 +137,26 @@
     const enabled = value
       ? value.enabled !== false
       : index === 0;
-    const requestedType = value?.type === 'task'
-      || value?.type === 'domain'
-      || (index === 1 && !value) ? 'task' : 'pdf';
+    const isLegacyPdf = value?.type === 'pdf';
     const explicitRules = value?.matchRules ?? value?.rules ?? value?.sites;
     const hasExplicitRules = Array.isArray(explicitRules) || typeof explicitRules === 'string';
     const hasExplicitFamily = Array.isArray(value?.domains) || typeof value?.domains === 'string'
       || typeof value?.domainFamily === 'string';
-    let matchRules = requestedType === 'task'
-      ? hasExplicitRules
+    let matchRules = isLegacyPdf
+      ? normalizeTaskRules(['PDF'])
+      : hasExplicitRules
         ? normalizeTaskRules(explicitRules, value?.domain)
         : hasExplicitFamily
           ? normalizeTaskRules(value.domains ?? value.domainFamily, value?.domain)
-          : normalizeTaskRules(legacyDomainFamily(value?.domain))
-      : [];
-    const isLegacyAcmProfile = requestedType === 'task'
+          : normalizeTaskRules(legacyDomainFamily(value?.domain));
+    const isLegacyAcmProfile = !isLegacyPdf
       && value?.customTitle === 'ACM Digital Library'
       && serializeTaskRules(matchRules).length === 1
       && serializeTaskRules(matchRules)[0] === 'dl.acm.org';
     if (isLegacyAcmProfile) {
       matchRules = normalizeTaskRules(BUILT_IN_PROFILES['dl.acm.org'].matchRules);
     }
-    const type = requestedType;
+    const type = 'task';
     const domains = matchRules.filter(rule => rule.kind === 'domain').map(rule => rule.value);
     const firstRule = matchRules[0];
     const primaryDomain = (() => {
@@ -157,7 +165,7 @@
     })();
     const allowedColors = new Set(GROUP_COLORS);
     const profile = builtInProfileForRules(matchRules);
-    const defaultIcon = requestedType === 'pdf' ? 'book' : profile?.icon || 'circle';
+    const defaultIcon = profile?.icon || 'circle';
     return {
       enabled,
       type,
@@ -166,7 +174,7 @@
       matchRules,
       customTitle: typeof value?.customTitle === 'string'
         ? (isLegacyAcmProfile ? BUILT_IN_PROFILES['dl.acm.org'].title : value.customTitle.trim().slice(0, 40))
-        : '',
+        : (isLegacyPdf ? 'PDF' : ''),
       groupColor: allowedColors.has(value?.groupColor)
         ? value.groupColor : (index === 0 ? 'blue' : 'purple'),
       keepAreaEnabled: value?.keepAreaEnabled !== false,
@@ -256,12 +264,13 @@
 
   function configKey(config) {
     if (!config?.enabled) return 'disabled';
-    const isTaskConfig = config.type === 'task' || config.type === 'domain';
-    if (!isTaskConfig) return 'pdf';
     // Keep the historical primary-domain key stable so existing Keep manifests
     // survive migration to mixed Task Group rules.
-    const [firstRule] = normalizeTaskRules(config.matchRules, config.domain);
+    const [firstRule] = config.type === 'pdf'
+      ? normalizeTaskRules(['PDF'])
+      : normalizeTaskRules(config.matchRules, config.domain);
     if (!firstRule) return 'disabled';
+    if (firstRule.kind === 'pdf') return 'pdf';
     return firstRule.kind === 'domain'
       ? `domain:${firstRule.value}`
       : `task:page:${firstRule.value}`;
@@ -305,6 +314,7 @@
     const first = normalizeTaskRules(firstRules);
     const second = normalizeTaskRules(secondRules);
     return first.some(a => second.some(b => {
+      if (a.kind === 'pdf' || b.kind === 'pdf') return a.kind === b.kind;
       if (a.kind === 'page' && b.kind === 'page') return a.value === b.value;
       if (a.kind === 'domain' && b.kind === 'domain') {
         return a.value === b.value
@@ -322,6 +332,7 @@
     if (config.type === 'pdf') return isPdfTab(tab);
     const rules = normalizeTaskRules(config.matchRules, config.domain);
     if (rules.length === 0) return false;
+    if (rules.some(rule => rule.kind === 'pdf') && isPdfTab(tab)) return true;
     return [tab?.pendingUrl, tab?.url].some(value => {
       if (typeof value !== 'string' || !value) return false;
       try {
@@ -329,7 +340,7 @@
         const hostname = new URL(value).hostname;
         return rules.some(rule => rule.kind === 'page'
           ? pageUrl === rule.value
-          : hostnameMatchesFamily(hostname, [rule.value]));
+          : rule.kind === 'domain' && hostnameMatchesFamily(hostname, [rule.value]));
       } catch {
         return false;
       }
@@ -338,12 +349,12 @@
 
   function captainIndexForTab(tab, configs) {
     const activeConfigs = Array.isArray(configs) ? configs : [];
-    const pdfIndex = activeConfigs.findIndex(config =>
-      config?.enabled && config.type === 'pdf' && matchesTab(tab, config));
+    const pdfIndex = isPdfTab(tab) ? activeConfigs.findIndex(config =>
+      config?.enabled && (config.type === 'pdf'
+        || normalizeTaskRules(config.matchRules).some(rule => rule.kind === 'pdf'))) : -1;
     if (pdfIndex >= 0) return pdfIndex;
     return activeConfigs.findIndex(config =>
       config?.enabled
-      && (config.type === 'task' || config.type === 'domain')
       && matchesTab(tab, config));
   }
 

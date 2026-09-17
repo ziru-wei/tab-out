@@ -35,6 +35,7 @@ const POCKET_TAB_IDS_KEY = TAB_OUT_STORAGE.POCKET_TAB_IDS;
 const POCKET_ITEMS_KEY = TAB_OUT_STORAGE.POCKET_ITEMS;
 const POCKET_LIVE_ITEM_IDS_KEY = TAB_OUT_STORAGE.POCKET_LIVE_ITEM_IDS;
 const TAB_CUSTOM_LABELS_KEY = TAB_OUT_STORAGE.TAB_CUSTOM_LABELS;
+const PAGE_CUSTOM_LABELS_KEY = TAB_OUT_STORAGE.PAGE_CUSTOM_LABELS;
 const UNDO_HISTORY_KEY = TAB_OUT_STORAGE.UNDO_HISTORY;
 const REDO_HISTORY_KEY = TAB_OUT_STORAGE.REDO_HISTORY;
 const STARTUP_PRUNE_STATE_KEY = TAB_OUT_STORAGE.CAPTAIN_STARTUP_PRUNE_STATE;
@@ -61,6 +62,7 @@ const errorNavigationSequenceByDocument = new Map();
 const errorNavigationSequenceByRequest = new Map();
 let pocketStateMutationTail = Promise.resolve();
 let tabCustomLabelMutationTail = Promise.resolve();
+let pageCustomLabelMutationTail = Promise.resolve();
 let offscreenCreation = null;
 let ambienceCommandTail = Promise.resolve();
 let startupPruneTail = Promise.resolve();
@@ -369,6 +371,23 @@ function mutateSessionTabCustomLabel(tabId, customLabel) {
   };
   const operation = tabCustomLabelMutationTail.then(task, task);
   tabCustomLabelMutationTail = operation.catch(() => {});
+  return operation;
+}
+
+function mutatePageCustomLabel(url, customLabel) {
+  const identityUrl = getPocketIdentityUrl(url);
+  if (!identityUrl) return Promise.reject(new Error('Page URL is required'));
+  const nextLabel = TabOutContracts.normalizeCustomLabel(customLabel);
+  const task = async () => {
+    const stored = await chrome.storage.local.get(PAGE_CUSTOM_LABELS_KEY);
+    const labels = TabOutContracts.normalizePageCustomLabels(stored[PAGE_CUSTOM_LABELS_KEY]);
+    if (nextLabel) labels[identityUrl] = nextLabel;
+    else delete labels[identityUrl];
+    await chrome.storage.local.set({ [PAGE_CUSTOM_LABELS_KEY]: labels });
+    return labels;
+  };
+  const operation = pageCustomLabelMutationTail.then(task, task);
+  pageCustomLabelMutationTail = operation.catch(() => {});
   return operation;
 }
 
@@ -2089,6 +2108,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (!matchesRuntimeMessage(message, TAB_OUT_MESSAGES.SET_TAB_CUSTOM_LABEL)) return;
   mutateSessionTabCustomLabel(message.tabId, message.customLabel).then(
     tabCustomLabels => sendResponse({ ok: true, tabCustomLabels }),
+    error => sendResponse({ ok: false, error: String(error?.message || error) }),
+  );
+  return true;
+});
+
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (!matchesRuntimeMessage(message, TAB_OUT_MESSAGES.SET_PAGE_CUSTOM_LABEL)) return;
+  mutatePageCustomLabel(message.url, message.customLabel).then(
+    pageCustomLabels => sendResponse({ ok: true, pageCustomLabels }),
     error => sendResponse({ ok: false, error: String(error?.message || error) }),
   );
   return true;

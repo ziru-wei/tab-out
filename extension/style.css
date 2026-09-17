@@ -47,7 +47,7 @@
   --ptk-duplicate-red: #c4554d;
   --ptk-color-danger: var(--ptk-duplicate-red);
   /* Action tints are composited over each chip's actual surface. */
-  --ptk-action-delete-surface: rgba(195, 142, 138, 0.12);
+  --ptk-action-exit-surface: rgba(195, 142, 138, 0.12);
   --ptk-action-archive-surface: rgba(219, 219, 219, 0.329);
   --ptk-card-action-surface: rgba(247, 247, 248, 0.72);
   --ptk-transition: color 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease, transform 100ms ease;
@@ -341,14 +341,20 @@ body.ambience-mixer-open {
   padding: 30px var(--dashboard-side-padding, 32px) 80px;
 }
 
-/* The Pocket remains a viewport overlay. JavaScript measures the clear
-   viewport beside it and gives the dashboard and header one shared axis. */
-body.dashboard-adaptive-layout .container,
-body.dashboard-adaptive-layout .dashboard-top {
+/* Open tabs use the clear lane beside Pocket; the coin stays on the viewport
+   axis until the centered header itself runs out of room. */
+body.dashboard-adaptive-layout .container {
   width: var(--dashboard-area-width);
   max-width: none;
   margin-right: 0;
   margin-left: var(--dashboard-area-left);
+}
+
+body.dashboard-adaptive-layout .dashboard-top {
+  width: var(--dashboard-header-width);
+  max-width: none;
+  margin-right: 0;
+  margin-left: var(--dashboard-header-left);
 }
 
 /* The real-time metal coin lives above the shortcut guide in normal page
@@ -365,7 +371,7 @@ body.dashboard-adaptive-layout .dashboard-top {
 .daily-quote {
   display: flex;
   width: 440px;
-  max-width: calc(100vw - 48px);
+  max-width: 100%;
   margin: 20px 0 8px;
   align-items: baseline;
   justify-content: center;
@@ -674,6 +680,9 @@ body.dashboard-adaptive-layout .dashboard-top {
   flex-direction: row;
   align-items: center;
   gap: 18px;
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
   margin: 6px 0 0;
   padding: 0;
   background: transparent;
@@ -690,12 +699,14 @@ body.dashboard-adaptive-layout .dashboard-top {
 .keyboard-prompts p {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 3px;
   margin: 0;
   color: rgba(38, 38, 38, 0.5);
   font-size: 10px;
   line-height: 1.4;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .keyboard-prompts p[hidden] {
@@ -2020,7 +2031,7 @@ border-width: 1.25px !important;
 }
 
 /* A child action is its own hover target. Do not also apply the stronger
-   whole-chip outline merely because the pointer is over Archive/Delete/Restore. */
+   whole-chip outline merely because the pointer is over Archive/Close/Restore. */
 .page-chip.clickable:not(.candidate):has(.chip-actions > button:hover) {
   border-color: var(--ptk-card-border);
 }
@@ -2043,18 +2054,18 @@ border-width: 1.25px !important;
   border-color: var(--ptk-candidate-border);
 }
 
-/* Immediate acknowledgement while Chrome processes a tab deletion. The card
+/* Immediate acknowledgement while Chrome processes a tab close. The card
    closes upward from its bottom edge instead of pausing at partial
    opacity. This stays on compositor-friendly transform/clip-path properties. */
-.page-chip.is-delete-pending,
-.mission-card.is-delete-pending {
-  animation: tabout-delete-exit 300ms cubic-bezier(.3, .72, .2, 1) forwards;
+.page-chip.is-close-pending,
+.mission-card.is-close-pending {
+  animation: tabout-close-exit 300ms cubic-bezier(.3, .72, .2, 1) forwards;
   pointer-events: none;
   transform-origin: center top;
   will-change: transform, clip-path;
 }
 
-@keyframes tabout-delete-exit {
+@keyframes tabout-close-exit {
   0% {
     transform: translateY(0) scale(1);
     clip-path: inset(0 0 0 0 round 6px);
@@ -2072,15 +2083,15 @@ border-width: 1.25px !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .page-chip.is-delete-pending,
-  .mission-card.is-delete-pending {
+  .page-chip.is-close-pending,
+  .mission-card.is-close-pending {
     animation-duration: 1ms;
   }
 }
 
 /* Make the intent of each destructive or archival action visible on its card. */
 .page-chip.clickable:has(.chip-close:hover) {
-  --chip-action-multiply-surface: var(--ptk-action-delete-surface);
+  --chip-action-multiply-surface: var(--ptk-action-exit-surface);
   background: var(--ptk-card-action-surface) !important;
 }
 
@@ -2118,7 +2129,7 @@ border-width: 1.25px !important;
 .domain-card:has(
   .mission-top > .group-card-actions .group-close-button:hover:not(:active)
 ) .page-chip.clickable {
-  --chip-action-multiply-surface: var(--ptk-action-delete-surface);
+  --chip-action-multiply-surface: var(--ptk-action-exit-surface);
   background: var(--ptk-card-action-surface) !important;
   box-shadow: var(--ptk-card-shadow-hover) !important;
 }
@@ -2134,9 +2145,9 @@ border-width: 1.25px !important;
 }
 
 .captain-group-card:has(
-  .captain-subgroup-actions .captain-pending-delete-button:hover:not(:active)
+  .captain-subgroup-actions .captain-pending-close-button:hover:not(:active)
 ) .captain-subgroup-pending .page-chip.clickable {
-  --chip-action-multiply-surface: var(--ptk-action-delete-surface);
+  --chip-action-multiply-surface: var(--ptk-action-exit-surface);
   background: var(--ptk-card-action-surface) !important;
   box-shadow: var(--ptk-card-shadow-hover) !important;
 }
@@ -2543,7 +2554,7 @@ button.chip-close.icon-button:active:not(:disabled)::before {
 }
 
 /* When Pocket is disabled in Options, remove Archive controls while keeping
-   Delete available on chips, group headers, and Captain dividers. */
+   Close available on chips, group headers, and Captain dividers. */
 body.read-later-disabled .active-section .page-chip .chip-actions
   > button.archive-tab-button.icon-button,
 body.read-later-disabled .active-section .group-card-actions
@@ -2602,7 +2613,7 @@ body.read-later-disabled .active-section .group-card-actions
 }
 
 .page-chip .chip-actions > .chip-close.icon-button:hover:not(:disabled)::before {
-  background: var(--ptk-action-delete-surface);
+  background: var(--ptk-action-exit-surface);
   opacity: 1;
 }
 
@@ -2792,8 +2803,8 @@ button:is(
   background: var(--ptk-card-action-surface) !important;
 }
 
-.page-chip.is-other-action-delete-target {
-  --chip-action-multiply-surface: var(--ptk-action-delete-surface);
+.page-chip.is-other-action-close-target {
+  --chip-action-multiply-surface: var(--ptk-action-exit-surface);
   box-shadow: var(--ptk-card-shadow-hover) !important;
 }
 
@@ -2808,14 +2819,14 @@ button:is(
   box-shadow: var(--ptk-card-shadow-hover) !important;
 }
 
-.page-chip.is-loose-prompt-delete-target {
-  --chip-action-multiply-surface: var(--ptk-action-delete-surface);
+.page-chip.is-loose-prompt-close-target {
+  --chip-action-multiply-surface: var(--ptk-action-exit-surface);
   background: var(--ptk-card-action-surface) !important;
   box-shadow: var(--ptk-card-shadow-hover) !important;
 }
 
 /* The pressed source card is excluded from the bulk action, so its ordinary
-   archive/delete hover tint must not make it look like a target. */
+   archive/close hover tint must not make it look like a target. */
 .page-chip.clickable.is-other-action-source,
 .page-chip.clickable.is-other-action-source:has(.chip-close:hover),
 .page-chip.clickable.is-other-action-source:has(.archive-tab-button:hover) {
@@ -2835,9 +2846,9 @@ button:is(
   box-shadow: var(--ptk-card-shadow-hover) !important;
 }
 
-.page-chip.clickable.is-marquee-selected.is-marquee-delete-preview,
-.page-chip.clickable.is-marquee-selected.is-marquee-delete-preview:has(.chip-close:hover) {
-  --chip-action-multiply-surface: var(--ptk-action-delete-surface);
+.page-chip.clickable.is-marquee-selected.is-marquee-close-preview,
+.page-chip.clickable.is-marquee-selected.is-marquee-close-preview:has(.chip-close:hover) {
+  --chip-action-multiply-surface: var(--ptk-action-exit-surface);
   background: var(--ptk-card-action-surface) !important;
   box-shadow: var(--ptk-card-shadow-hover) !important;
 }
@@ -2855,14 +2866,14 @@ body:has(#restoreArchiveButton:hover:not(:disabled))
    nested Captain/domain structure must not change the candidate treatment. */
 body:has(#clearArchiveButton:hover:not(:disabled))
   .archive-tabs .page-chip.clickable {
-  --chip-action-multiply-surface: var(--ptk-action-delete-surface);
+  --chip-action-multiply-surface: var(--ptk-action-exit-surface);
   background: var(--ptk-card-action-surface) !important;
   box-shadow: var(--ptk-card-shadow-hover) !important;
 }
 
 body:has(#killArchiveButton:hover:not(:disabled))
   .archive-tabs .page-chip.clickable:not(.is-dormant-pocket) {
-  --chip-action-multiply-surface: var(--ptk-action-delete-surface);
+  --chip-action-multiply-surface: var(--ptk-action-exit-surface);
   background: var(--ptk-card-action-surface) !important;
   box-shadow: var(--ptk-card-shadow-hover) !important;
 }
@@ -2873,7 +2884,7 @@ body:has(#killArchiveButton:hover:not(:disabled))
   .is-other-action-target,
   .is-loose-prompt-target,
   .is-marquee-archive-preview,
-  .is-marquee-delete-preview
+  .is-marquee-close-preview
 ),
 .domain-card:has(.mission-top > .group-card-actions .group-card-action:hover:not(:active))
   .page-chip.candidate.chip-has-dupes,
